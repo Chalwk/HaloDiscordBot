@@ -23,6 +23,8 @@ public class Main {
             throw new IllegalStateException("HALO_DISCORD_BOT_TOKEN environment variable is not set.");
         }
 
+        System.out.println("Starting HaloDiscordBot...");
+
         JDA jda = JDABuilder.createDefault(token)
                 .enableIntents(GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT)
                 .setChunkingFilter(ChunkingFilter.NONE)
@@ -36,7 +38,6 @@ public class Main {
             GameEventTcpServer server = new GameEventTcpServer(jda, config, serverConfig.name(), serverConfig.port());
             server.start();
             allProcessors.add(server.getProcessor());
-            System.out.println("Started TCP server for '" + serverConfig.name() + "' on port " + serverConfig.port());
         }
 
         CommandManager cmdManager = new CommandManager();
@@ -46,6 +47,6 @@ public class Main {
         jda.addEventListener(new SlashCommandListener(cmdManager));
         jda.updateCommands().addCommands(cmdManager.getCommandDataList()).queue();
 
-        System.out.println("HaloDiscordBot online. Listening on " + servers.size() + " port(s).");
+        System.out.println("\nHaloDiscordBot online. Listening on " + servers.size() + " port(s).");
     }
 }

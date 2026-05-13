@@ -30,7 +30,7 @@ public class GameEventTcpServer {
     public void start() {
         new Thread(() -> {
             try (ServerSocket serverSocket = new ServerSocket(port, 0, InetAddress.getLoopbackAddress())) {
-                System.out.println("TCP server [" + serverName + "] listening on port " + port);
+                System.out.println("TCP Server started for '" + serverName + "' on port " + port + ".");
                 while (!Thread.currentThread().isInterrupted()) {
                     Socket clientSocket = serverSocket.accept();
                     System.out.println("[" + serverName + "] New connection from " + clientSocket.getRemoteSocketAddress());

@@ -5,8 +5,6 @@ cd /d "%~dp0"
 
 set JAR=build\libs\HaloDiscordBot.jar
 
-echo Starting HaloDiscordBot...
-
 if not exist "%JAR%" (
     echo ERROR: Jar not found at %JAR%
     echo Make sure you've built the project first.
