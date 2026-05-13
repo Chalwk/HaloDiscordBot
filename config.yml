@@ -3,16 +3,14 @@ HALO_SERVERS:
     port: 47652
     channels:
       general: "1504095256184881163"
-      chat: "1504095256184881163"
       admin: "1504095321918275765"
   - name: "SPCLib-Uber Racing"
     port: 47653
     channels:
       general: "1504095256184881163"
-      chat: "1504095256184881163"
       admin: "1504095321918275765"
 
-# Required permissions per slash command (case-sensitive, must match JDA Permission enum: https://docs.jda.wiki/net/dv8tion/jda/api/Permission.html)
+# Required permissions per slash command
 COMMAND_PERMISSIONS:
   game_status: "ADMINISTRATOR"
 

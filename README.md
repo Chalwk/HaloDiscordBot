@@ -90,29 +90,6 @@ In the Discord Developer Portal:
 
 Invite the bot to your server.
 
-### 4. Configure Channels
-
-Find your Discord channel IDs (enable Developer Mode in Discord → right-click channel → *Copy ID*).  
-Edit `config.yml`:
-
-Then reference these keys in each event's `channel:` field.
-
-**To send events from a specific game server to different channels**, add a `channels` block inside its `HALO_SERVERS`
-entry:
-
-```yaml
-HALO_SERVERS:
-  - name: "Main Server"
-    port: 47652
-    channels:
-      general: "1504095256184881163"   # overrides global
-      admin: "1504095321918275765"
-      # chat: "another_channel_id"
-
-  - name: "Secondary Server"
-    port: 47653
-```
-
 ---
 
 ## Running the Bot
@@ -178,13 +155,13 @@ HALO_SERVERS:
   - name: "Main Server"
     port: 47652
     channels:
-      general: "123456789012345678"
-      admin: "234567890123456789"
+      admin: "xxxxxxxxxxxxxxxxxxx"
+      general: "xxxxxxxxxxxxxxxxxxx"
   - name: "Secondary Server"
     port: 47653
     channels:
-      general: "123456789012345678"
-      admin: "234567890123456789"
+      admin: "xxxxxxxxxxxxxxxxxxx"
+      general: "xxxxxxxxxxxxxxxxxxx"
 ```
 
 ### `EVENT_CHANNELS`
