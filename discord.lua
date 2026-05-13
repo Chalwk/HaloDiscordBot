@@ -9,11 +9,11 @@ LICENSE:          MIT License
 =====================================================================================
 ]]
 
-local host = "127.0.0.1"            -- default bot address
-local port = 47652                  -- default bot port
-local auto_connect = true           -- automatically connect on script load
-local reconnect_interval = 5        -- seconds between reconnection attempts
-local max_queue_size = 200          -- maximum message queue size
+local host = "127.0.0.1"       -- bot's IP (same machine)
+local port = 47652             -- must match one of the ports in config.yml
+local auto_connect = true      -- automatically connect on script load
+local reconnect_interval = 5   -- seconds between reconnection attempts
+local max_queue_size = 200     -- max queued messages if disconnected
 
 local PIRATED_HASHES = {
     ['388e89e69b4cc08b3441f25959f74103'] = true,

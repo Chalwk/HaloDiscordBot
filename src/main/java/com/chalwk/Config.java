@@ -7,9 +7,8 @@ import org.yaml.snakeyaml.Yaml;
 import java.awt.*;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 public class Config {
@@ -124,16 +123,30 @@ public class Config {
         return eventChannels.get(channelKey);
     }
 
-    public int getTcpPort() {
-        Object port = data.get("TCP_PORT");
-        if (port instanceof Number) {
-            return ((Number) port).intValue();
+    public List<TcpServerConfig> getTcpServers() {
+        List<TcpServerConfig> servers = new ArrayList<>();
+        Object serversObj = data.get("TCP_SERVERS");
+        if (serversObj instanceof List<?>) {
+            for (Object item : (List<?>) serversObj) {
+                if (item instanceof Map<?, ?> map) {
+                    String name = (String) map.get("name");
+                    Object portObj = map.get("port");
+                    int port = (portObj instanceof Number) ? ((Number) portObj).intValue() : 0;
+                    if (port > 0 && name != null && !name.isBlank()) {
+                        servers.add(new TcpServerConfig(name, port));
+                    }
+                }
+            }
         }
-        return 12345;
+        if (!servers.isEmpty()) {
+            return servers;
+        }
+        return servers;
     }
-
 
     public String getDiscordBotToken() {
         return System.getenv("HALO_DISCORD_BOT_TOKEN");
     }
+
+    public record TcpServerConfig(String name, int port) {}
 }

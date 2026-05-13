@@ -15,10 +15,14 @@ public class GameEventTcpServer {
 
     private final Config config;
     private final GameEventProcessor processor;
+    private final int port;
+    private final String serverName;
 
-    public GameEventTcpServer(JDA jda, Config config) {
+    public GameEventTcpServer(JDA jda, Config config, String serverName, int port) {
         this.config = config;
-        this.processor = new GameEventProcessor(jda, config);
+        this.serverName = serverName;
+        this.port = port;
+        this.processor = new GameEventProcessor(jda, config, serverName, port);
     }
 
     public GameEventProcessor getProcessor() {
@@ -26,18 +30,17 @@ public class GameEventTcpServer {
     }
 
     public void start() {
-        int port = config.getTcpPort();
         new Thread(() -> {
             try (ServerSocket serverSocket = new ServerSocket(port, 0, InetAddress.getLoopbackAddress())) {
-                System.out.println("TCP server listening on port " + port);
+                System.out.println("TCP server [" + serverName + "] listening on port " + port);
                 while (!Thread.currentThread().isInterrupted()) {
                     Socket clientSocket = serverSocket.accept();
-                    System.out.println("New connection from " + clientSocket.getRemoteSocketAddress());
+                    System.out.println("[" + serverName + "] New connection from " + clientSocket.getRemoteSocketAddress());
                     processor.setHasConnectedClient(true);
                     new Thread(() -> handleClient(clientSocket)).start();
                 }
             } catch (Exception e) {
-                System.err.println("TCP server error: " + e.getMessage());
+                System.err.println("TCP server error for " + serverName + ": " + e.getMessage());
                 e.printStackTrace();
             }
         }).start();
@@ -52,11 +55,11 @@ public class GameEventTcpServer {
                     processor.processEvent(line);
                 }
             } catch (Exception e) {
-                System.err.println("Client connection error: " + e.getMessage());
+                System.err.println("[" + serverName + "] Client connection error: " + e.getMessage());
             }
         } catch (Exception ignored) {
         } finally {
-            System.out.println("Client disconnected");
+            System.out.println("[" + serverName + "] Client disconnected");
             processor.setHasConnectedClient(false);
         }
     }

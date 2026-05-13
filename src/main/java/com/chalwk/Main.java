@@ -4,12 +4,16 @@ package com.chalwk;
 
 import com.chalwk.commands.GameStatus;
 import com.chalwk.listeners.SlashCommandListener;
+import com.chalwk.tcp.GameEventProcessor;
 import com.chalwk.tcp.GameEventTcpServer;
 import com.chalwk.utils.CommandManager;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class Main {
     public static void main(String[] args) throws Exception {
@@ -25,17 +29,23 @@ public class Main {
                 .build();
         jda.awaitReady();
 
-        GameEventTcpServer server = new GameEventTcpServer(jda, config);
-        server.start();
+        List<GameEventProcessor> allProcessors = new ArrayList<>();
+        List<Config.TcpServerConfig> servers = config.getTcpServers();
+
+        for (Config.TcpServerConfig serverConfig : servers) {
+            GameEventTcpServer server = new GameEventTcpServer(jda, config, serverConfig.name(), serverConfig.port());
+            server.start();
+            allProcessors.add(server.getProcessor());
+            System.out.println("Started TCP server for '" + serverConfig.name() + "' on port " + serverConfig.port());
+        }
 
         CommandManager cmdManager = new CommandManager();
-        cmdManager.register(new GameStatus(server.getProcessor()));
-
+        cmdManager.register(new GameStatus(allProcessors));
         cmdManager.loadPermissionsFromConfig("config.yml");
 
         jda.addEventListener(new SlashCommandListener(cmdManager));
         jda.updateCommands().addCommands(cmdManager.getCommandDataList()).queue();
 
-        System.out.println("HaloDiscordBot online. Listening on port " + config.getTcpPort());
+        System.out.println("HaloDiscordBot online. Listening on " + servers.size() + " port(s).");
     }
 }

@@ -1,5 +1,8 @@
-# TCP port for the game event server (must match discord.lua)
-TCP_PORT: 47652
+TCP_SERVERS:
+  - name: "DEV SERVER"
+    port: 47652
+  - name: "SPCLib-Uber Racing"
+    port: 47653
 
 # Named channels - you can reference these keys in each event's "channel" field
 EVENT_CHANNELS:

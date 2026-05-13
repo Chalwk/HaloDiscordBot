@@ -22,15 +22,19 @@ public class GameEventProcessor {
 
     private final JDA jda;
     private final Config config;
+    private final String serverName;
+    private final int serverPort;
 
     private final AtomicLong totalEventsProcessed = new AtomicLong(0);
     private final AtomicReference<Instant> lastEventTime = new AtomicReference<>(null);
     private final Instant startTime = Instant.now();
     private volatile boolean hasConnectedClient = false;
 
-    public GameEventProcessor(JDA jda, Config config) {
+    public GameEventProcessor(JDA jda, Config config, String serverName, int serverPort) {
         this.jda = jda;
         this.config = config;
+        this.serverName = serverName;
+        this.serverPort = serverPort;
     }
 
     public void processEvent(String rawLine) {
@@ -154,5 +158,13 @@ public class GameEventProcessor {
 
     public boolean hasConnectedClient() {
         return hasConnectedClient;
+    }
+
+    public String getServerName() {
+        return serverName;
+    }
+
+    public int getServerPort() {
+        return serverPort;
     }
 }

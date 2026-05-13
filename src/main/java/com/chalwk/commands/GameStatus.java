@@ -12,18 +12,19 @@ import net.dv8tion.jda.api.interactions.commands.build.Commands;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collection;
 
 public class GameStatus extends BaseCommand {
 
-    private final GameEventProcessor processor;
+    private final Collection<GameEventProcessor> processors;
 
-    public GameStatus(GameEventProcessor processor) {
-        this.processor = processor;
+    public GameStatus(Collection<GameEventProcessor> processors) {
+        this.processors = processors;
     }
 
     @Override
     public CommandData getCommandData() {
-        return Commands.slash("game_status", "Show game event forwarder status");
+        return Commands.slash("game_status", "Show game event forwarder status for all connected SAPP servers");
     }
 
     @Override
@@ -33,17 +34,29 @@ public class GameStatus extends BaseCommand {
 
     @Override
     protected void executeCommand(SlashCommandInteractionEvent event) {
-        long events = processor.getTotalEventsProcessed();
-        Instant last = processor.getLastEventTime();
-        Instant start = processor.getStartTime();
-        boolean hasClient = processor.hasConnectedClient();
+        if (processors.isEmpty()) {
+            event.reply("No SAPP servers are configured.").setEphemeral(true).queue();
+            return;
+        }
 
-        String lastStr = last != null ? last.toString() : "Never";
-        String uptime = start != null ? formatDuration(Duration.between(start, Instant.now())) : "N/A";
+        StringBuilder description = new StringBuilder();
+        for (GameEventProcessor proc : processors) {
+            long events = proc.getTotalEventsProcessed();
+            Instant last = proc.getLastEventTime();
+            Instant start = proc.getStartTime();
+            boolean hasClient = proc.hasConnectedClient();
 
-        String desc = String.format("**TCP Client connected:** %s\n**Events processed:** %d\n**Last event:** %s\n**Uptime:** %s", hasClient ? "✅ Yes" : "❌ No", events, lastStr, uptime);
+            String lastStr = last != null ? last.toString() : "Never";
+            String uptime = start != null ? formatDuration(Duration.between(start, Instant.now())) : "N/A";
 
-        EmbedBuilder embed = new EmbedBuilder(EmbedUtil.createEmbed("📡 Game Event Forwarder Status", desc));
+            description.append(String.format("**%s (port %d)**\n", proc.getServerName(), proc.getServerPort()))
+                    .append(String.format("└ Connected: %s\n", hasClient ? "✅ Yes" : "❌ No"))
+                    .append(String.format("└ Events: %d\n", events))
+                    .append(String.format("└ Last event: %s\n", lastStr))
+                    .append(String.format("└ Uptime: %s\n\n", uptime));
+        }
+
+        EmbedBuilder embed = new EmbedBuilder(EmbedUtil.createEmbed("📡 Game Event Forwarder Status", description.toString()));
         event.replyEmbeds(embed.build()).setEphemeral(true).queue();
     }
 
