@@ -16,7 +16,6 @@ public class EmbedUtil {
                 .setTitle(title)
                 .setDescription(description)
                 .setColor(SPCLIB_COLOR)
-                .setFooter("SPCLib", "https://raw.githubusercontent.com/Chalwk/SPCLib/master/assets/images/logo-discord.jpg")
                 .build();
     }
 }
