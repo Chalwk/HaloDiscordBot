@@ -1,3 +1,4 @@
+// LoggerUtil.java
 // Copyright (c) 2026. Jericho Crosby (Chalwk)
 
 package com.chalwk.utils;
@@ -5,6 +6,7 @@ package com.chalwk.utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+// just a thin wrapper around SLF4J so we don't have to mess with LoggerFactory everywhere
 public final class LoggerUtil {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LoggerUtil.class);

@@ -31,6 +31,7 @@ public class CommandManager {
                 .collect(Collectors.toList());
     }
 
+    // reads COMMAND_PERMISSIONS section from config.yml and maps command names to Discord permissions
     @SuppressWarnings("unchecked")
     public void loadPermissionsFromConfig(String configPath) {
         try (FileInputStream fis = new FileInputStream(configPath)) {

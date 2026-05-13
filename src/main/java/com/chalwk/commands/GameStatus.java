@@ -18,6 +18,7 @@ public class GameStatus extends BaseCommand {
 
     private final Collection<GameEventProcessor> processors;
 
+    // keep track of all the game event processors for each server
     public GameStatus(Collection<GameEventProcessor> processors) {
         this.processors = processors;
     }
@@ -40,15 +41,18 @@ public class GameStatus extends BaseCommand {
         }
 
         StringBuilder description = new StringBuilder();
+        // loop through each server and collect its stats
         for (GameEventProcessor proc : processors) {
             long events = proc.getTotalEventsProcessed();
             Instant last = proc.getLastEventTime();
             Instant start = proc.getStartTime();
             boolean hasClient = proc.hasConnectedClient();
 
+            // if we never got an event, just say Never instead of showing null
             String lastStr = last != null ? last.toString() : "Never";
             String uptime = start != null ? formatDuration(Duration.between(start, Instant.now())) : "N/A";
 
+            // build a little tree view for each server's info
             description.append(String.format("**%s (port %d)**\n", proc.getServerName(), proc.getServerPort()))
                     .append(String.format("└ Connected: %s\n", hasClient ? "✅ Yes" : "❌ No"))
                     .append(String.format("└ Events: %d\n", events))
@@ -60,6 +64,7 @@ public class GameStatus extends BaseCommand {
         event.replyEmbeds(embed.build()).setEphemeral(true).queue();
     }
 
+    // turns a Duration object into a nice HH:MM:SS string, because nobody wants raw seconds!
     private String formatDuration(Duration d) {
         long seconds = d.getSeconds();
         long hours = seconds / 3600;

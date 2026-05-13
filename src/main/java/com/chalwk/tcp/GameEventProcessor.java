@@ -19,6 +19,7 @@ import java.util.regex.Pattern;
 
 public class GameEventProcessor {
 
+    // matches {key} placeholders in embed templates
     private static final Pattern PLACEHOLDER_PATTERN = Pattern.compile("\\{(\\w+)}");
 
     private final JDA jda;
@@ -26,6 +27,7 @@ public class GameEventProcessor {
     private final String serverName;
     private final int serverPort;
 
+    // stats tracking - using atomic because multiple threads might access these
     private final AtomicLong totalEventsProcessed = new AtomicLong(0);
     private final AtomicReference<Instant> lastEventTime = new AtomicReference<>(null);
     private final Instant startTime = Instant.now();
@@ -38,10 +40,12 @@ public class GameEventProcessor {
         this.serverPort = serverPort;
     }
 
+    // Takes a raw line from the TCP stream, parses and sends a Discord embed
     public void processEvent(String rawLine) {
         totalEventsProcessed.incrementAndGet();
         lastEventTime.set(Instant.now());
 
+        // format: eventType|key1=value1|key2=value2|...
         String[] parts = rawLine.split("\\|");
         if (parts.length == 0) return;
 
@@ -58,8 +62,9 @@ public class GameEventProcessor {
         }
 
         EmbedBuilder embed = buildEmbedFromConfig(eventType, data);
-        if (embed == null) return;
+        if (embed == null) return; // disabled or no config found
 
+        // figure out which Discord channel this event should go to
         EventEmbedConfig embedConfig = config.getEventEmbedConfig(eventType);
         String channelId = null;
         if (embedConfig != null && embedConfig.channelKey() != null) {
@@ -76,9 +81,11 @@ public class GameEventProcessor {
             return;
         }
 
+        // send the embed to discord
         channel.sendMessageEmbeds(embed.build()).queue();
     }
 
+    // takes the event type and data map, and builds an embed based on config.yml rules
     private EmbedBuilder buildEmbedFromConfig(String eventType, Map<String, String> data) {
         EventEmbedConfig embedConfig = config.getEventEmbedConfig(eventType);
         if (embedConfig == null || !embedConfig.enabled()) {
@@ -90,6 +97,7 @@ public class GameEventProcessor {
         eb.setTitle(title);
         eb.setColor(embedConfig.color());
 
+        // type mapping: maps integer subtype (for event_death and event_score)
         String subtypeStr = data.get("subtype");
         String description = null;
         if (subtypeStr != null && embedConfig.typeDescriptions() != null) {
@@ -103,6 +111,7 @@ public class GameEventProcessor {
             description = embedConfig.description();
         }
 
+        // either use explicit fields, or fall back to description, or just dump the raw data
         if (embedConfig.fields() != null && !embedConfig.fields().isEmpty()) {
             for (EventEmbedConfig.FieldConfig field : embedConfig.fields()) {
                 String fieldName = replacePlaceholders(field.name(), data);
@@ -119,6 +128,7 @@ public class GameEventProcessor {
         return eb;
     }
 
+    // replaces {key} placeholders in a template string with values from the data map
     private String replacePlaceholders(String template, Map<String, String> data) {
         if (template == null) return "";
         Matcher m = PLACEHOLDER_PATTERN.matcher(template);
@@ -132,6 +142,7 @@ public class GameEventProcessor {
         return sb.toString();
     }
 
+    // unescapes common sequences like \| \n \r that might come from discord.lua
     private String unescape(String s) {
         if (s == null) return "";
         return s.replace("\\|", "|")

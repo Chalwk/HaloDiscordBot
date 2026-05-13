@@ -9,13 +9,13 @@ import java.awt.*;
 
 public class EmbedUtil {
 
-    public static final Color SPCLIB_COLOR = new Color(0x00FFAA);
+    public static final Color DEFAULT_COLOR = new Color(0x00FFAA);
 
     public static MessageEmbed createEmbed(String title, String description) {
         return new EmbedBuilder()
                 .setTitle(title)
                 .setDescription(description)
-                .setColor(SPCLIB_COLOR)
+                .setColor(DEFAULT_COLOR)
                 .build();
     }
 }

@@ -1,7 +1,8 @@
+# HALO_SERVERS: list all the Halo game servers you want this bot to listen to
 HALO_SERVERS:
-  - name: "DEV SERVER"
-    port: 47652
-    channels:
+  - name: "DEV SERVER"          # just a friendly name, shows up in /game_status
+    port: 47652                 # the TCP port where SAPP will send game events
+    channels:                   # map channel keys (like "general" or "admin") to actual Discord channel IDs
       general: "1504095256184881163"
       admin: "1504095321918275765"
   - name: "SPCLib-Uber Racing"
@@ -10,33 +11,39 @@ HALO_SERVERS:
       general: "1504095256184881163"
       admin: "1504095321918275765"
 
-# Required permissions per slash command
+# COMMAND_PERMISSIONS: which Discord permissions are needed for each slash command
+# if a command isn't listed here, anyone can use it
 COMMAND_PERMISSIONS:
   game_status: "ADMINISTRATOR"
 
-# Game event embed customization
+# GAME_EVENTS: customize how each game event appears in Discord
+# the bot listens for events like chat, death, join, etc. from your SAPP server
 GAME_EVENTS:
   embeds:
 
+    # event_chat: when someone types a message in game
     event_chat:
-      enabled: true
-      channel: "general"
-      title: " "
-      color: "WHITE"
-      description: "**💬 Chat** → `{name}`: *{msg}*"
+      enabled: true              # set false to ignore this event entirely
+      channel: "general"         # which channel key to use (must match one from HALO_SERVERS channels)
+      title: " "                 # empty title means no title bar in embed
+      color: "WHITE"             # embed border color - can be named colors or hex like #FFAA00
+      description: "**💬 Chat** → `{name}`: *{msg}*"   # {name} and {msg} are replaced with real data
 
+    # event_command: when a player runs a server command (like /help)
     event_command:
       enabled: true
-      channel: "admin"
+      channel: "admin"           # sent to admin channel, not general
       title: " "
       color: "MAGENTA"
       description: "**⌘ Command** → `{name}`: `{cmd}`"
 
+    # event_death: someone died, with different messages for different death types
     event_death:
       enabled: true
       channel: "general"
       title: " "
       color: "RED"
+      # type maps a numeric subtype (from SAPP)
       type:
         1: "**☠️ Death:** `{killer_name}` drew first blood on `{victim_name}`"
         2: "**☠️ Death:** `{victim_name}` was killed from the grave by `{killer_name}`"
@@ -49,6 +56,7 @@ GAME_EVENTS:
         9: "**☠️ Death:** `{victim_name}` was killed by the server"
         10: "**☠️ Death:** `{victim_name}` died"
 
+    # event_end: game over
     event_end:
       enabled: true
       channel: "general"
@@ -56,13 +64,15 @@ GAME_EVENTS:
       color: "RED"
       description: "**🏁 Game Ended** → `{map}` **-** `{gt} (FFA: {ffa})`"
 
+    # event_join: player joined the server
     event_join:
       enabled: true
       channel: "general"
       title: " "
       color: "CYAN"
-      description: "**🟢 Join** → `{name}` **-** `{total}/16`"
+      description: "**🟢 Join** → `{name}` **-** `{total}/16`"   # total shows current player count
 
+    # event_leave: player disconnected from the server
     event_leave:
       enabled: true
       channel: "general"
@@ -70,13 +80,15 @@ GAME_EVENTS:
       color: "ORANGE"
       description: "**🔴 Quit** → `{name}` **-** `{total}/16`"
 
+    # event_login: when a player logs in with admin privileges
     event_login:
       enabled: true
-      channel: "admin"
+      channel: "admin"           # only sent to admin channel for privacy
       title: " "
       color: "PINK"
       description: "**🔐 Login** → `{name}`\n\n**Admin Level:** `{lvl}`"
 
+    # event_map_reset: disabled by default because it can be spammy
     event_map_reset:
       enabled: false
       channel: "general"
@@ -84,11 +96,13 @@ GAME_EVENTS:
       color: "ORANGE"
       description: "**♻️ Map Reset** → `{map}` **-** `{gt} ({ffa})`"
 
+    # event_score: scoring events like flag captures, race laps, etc.
     event_score:
       enabled: true
       channel: "general"
       title: " "
       color: "YELLOW"
+      # different subtypes for different game modes (CTF, race, etc.)
       type:
         1: "**{name}** captured the flag for the **{team}** team!\n\n🟥 Red Score: **{red_score}**\n🟦 Blue Score: **{blue_score}**\n🏁 Scorelimit: **{scorelimit}**"
         2: "**{name}** completed a lap for **{team}** team!\n🏁 Team Total Laps: **{total_team_laps}/{scorelimit}**\n🚩 Player Laps: **{score}**"
@@ -96,6 +110,7 @@ GAME_EVENTS:
         4: "**{name}** scored for **{team}** team!\n\n🟥 Red Score: **{red_score}**\n🟦 Blue Score: **{blue_score}**\n🏁 Scorelimit: **{scorelimit}**"
         5: "**{name}** scored!\n\n🟥 Red Score: **{red_score}**\n🟦 Blue Score: **{blue_score}**\n🏁 Scorelimit: **{scorelimit}**"
 
+    # event_snap: bot detection triggered - admins probably want to know
     event_snap:
       enabled: true
       channel: "admin"
@@ -103,6 +118,7 @@ GAME_EVENTS:
       color: "DARK_GRAY"
       description: "{name} snapped (bot detection)"
 
+    # event_spawn: player spawns - disabled because it's very spammy
     event_spawn:
       enabled: false
       channel: "general"
@@ -110,6 +126,7 @@ GAME_EVENTS:
       color: "GRAY"
       description: "**✨ Spawn** → `{name}` Team: `{team}`"
 
+    # event_start: new game begins
     event_start:
       enabled: true
       channel: "general"
@@ -117,6 +134,7 @@ GAME_EVENTS:
       color: "GREEN"
       description: "**🗺️ Game Started** → `{map}` **-** `{gt} (FFA: {ffa})`"
 
+    # event_team_switch: player changes teams - disabled by default
     event_team_switch:
       enabled: false
       channel: "general"

@@ -7,6 +7,7 @@ import org.yaml.snakeyaml.Yaml;
 import java.awt.*;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -19,6 +20,7 @@ public class Config {
     private final Map<String, EventEmbedConfig> eventEmbedConfigs = new HashMap<>();
     private final Map<String, HaloServerConfig> serverConfigs = new HashMap<>();
 
+    // load the whole config.yml file and parse everything into memory
     public Config() {
         try (InputStream input = new FileInputStream("config.yml")) {
             Yaml yaml = new Yaml();
@@ -30,6 +32,7 @@ public class Config {
         }
     }
 
+    // reads the list of HALO_SERVERS from config and turns them into objects
     private void loadHaloServers() {
         Object serversObj = data.get("HALO_SERVERS");
         if (serversObj instanceof List<?>) {
@@ -38,20 +41,22 @@ public class Config {
                     String name = (String) map.get("name");
                     Object portObj = map.get("port");
                     int port = (portObj instanceof Number) ? ((Number) portObj).intValue() : 0;
+                    // skip if port is invalid or name is missing
                     if (port <= 0 || name == null || name.isBlank()) continue;
 
-                    Map<String, String> perServerChannels = new HashMap<>();
+                    // per-server channel overrides - can be empty
+                    Map<String, String> channels = new HashMap<>();
                     Object channelsObj = map.get("channels");
                     if (channelsObj instanceof Map<?, ?>) {
                         for (Map.Entry<?, ?> entry : ((Map<?, ?>) channelsObj).entrySet()) {
                             String key = entry.getKey().toString();
                             Object val = entry.getValue();
                             if (val instanceof String) {
-                                perServerChannels.put(key, (String) val);
+                                channels.put(key, (String) val);
                             }
                         }
                     }
-                    serverConfigs.put(name, new HaloServerConfig(name, port, perServerChannels));
+                    serverConfigs.put(name, new HaloServerConfig(name, port, channels));
                 }
             }
         }
@@ -75,6 +80,7 @@ public class Config {
             String description = getString(cfg, "description", null);
             String channelKey = getString(cfg, "channel", null);
 
+            // fields are optional. Each field has name, value, and inline flag
             List<EventEmbedConfig.FieldConfig> fields = null;
             Object fieldsObj = cfg.get("fields");
             if (fieldsObj instanceof List) {
@@ -88,6 +94,7 @@ public class Config {
                         .collect(Collectors.toList());
             }
 
+            // type mapping: maps integer subtype (for event_death and event_score)
             Map<Integer, String> typeDescriptions = null;
             Object typeObj = cfg.get("type");
             if (typeObj instanceof Map<?, ?> typeMap) {
@@ -98,6 +105,7 @@ public class Config {
                         String desc = typeEntry.getValue().toString();
                         typeDescriptions.put(subtype, desc);
                     } catch (NumberFormatException ignored) {
+                        // if the key isn't a number, just skip it
                     }
                 }
             }
@@ -116,13 +124,17 @@ public class Config {
         return val instanceof Boolean ? (Boolean) val : defaultValue;
     }
 
+    // turns a color string like "RED" or "#FFAA00" into a real Color object
     private Color parseColor(String colorStr) {
         if (colorStr == null) return null;
         try {
-            java.lang.reflect.Field field = Color.class.getField(colorStr.toUpperCase());
+            // try named constant first (e.g., RED, BLUE)
+            Field field = Color.class.getField(colorStr.toUpperCase());
             return (Color) field.get(null);
         } catch (Exception ignored) {
+            // ignore
         }
+        // try hex code
         if (colorStr.startsWith("#")) {
             try {
                 return Color.decode(colorStr);
@@ -136,6 +148,7 @@ public class Config {
         return eventEmbedConfigs.getOrDefault(eventType, null);
     }
 
+    // looks up the actual Discord channel ID for a given server and channel key
     public String getEventChannelId(String serverName, String channelKey) {
         if (channelKey == null) return null;
         HaloServerConfig server = serverConfigs.get(serverName);
@@ -149,10 +162,12 @@ public class Config {
         return new ArrayList<>(serverConfigs.values());
     }
 
+    // reads bot token from environment variable - never hardcode tokens!
     public String getDiscordBotToken() {
         return System.getenv("HALO_DISCORD_BOT_TOKEN");
     }
 
+    // simple record to hold per-server config data
     public record HaloServerConfig(String name, int port, Map<String, String> perServerChannels) {
     }
 }

@@ -26,6 +26,7 @@ public class Main {
 
         LoggerUtil.info("Starting HaloDiscordBot...");
 
+        // fire up the JDA instance and wait for it to be ready
         JDA jda = JDABuilder.createDefault(token)
                 .enableIntents(GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT)
                 .setChunkingFilter(ChunkingFilter.NONE)
@@ -35,12 +36,14 @@ public class Main {
         List<GameEventProcessor> allProcessors = new ArrayList<>();
         List<Config.HaloServerConfig> servers = config.getHaloServers();
 
+        // start a TCP server for each configured Halo server
         for (Config.HaloServerConfig serverConfig : servers) {
             GameEventTcpServer server = new GameEventTcpServer(jda, config, serverConfig.name(), serverConfig.port());
             server.start();
             allProcessors.add(server.getProcessor());
         }
 
+        // set up slash commands and permissions
         CommandManager cmdManager = new CommandManager();
         cmdManager.register(new GameStatus(allProcessors));
         cmdManager.loadPermissionsFromConfig("config.yml");
