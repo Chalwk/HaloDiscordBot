@@ -1,0 +1,15 @@
+<configuration>
+    <!-- Set root level to WARN so only warnings/errors show by default -->
+    <root level="WARN">
+        <appender-ref ref="STDOUT"/>
+    </root>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss} %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Keeps classes at INFO -->
+    <logger name="com.chalwk" level="INFO"/>
+</configuration>

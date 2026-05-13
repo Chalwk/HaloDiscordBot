@@ -1,0 +1,48 @@
+// Copyright (c) 2026. Jericho Crosby (Chalwk)
+
+plugins {
+    id 'java'
+    id 'application'
+    id 'com.gradleup.shadow' version '8.3.6'
+}
+
+group 'com.chalwk'
+version '1.0.0'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'net.dv8tion:JDA:6.4.1'
+    implementation 'org.yaml:snakeyaml:2.0'
+    implementation 'ch.qos.logback:logback-classic:1.5.32'
+}
+
+// Application configuration (defines the main class)
+application {
+    mainClass = 'com.chalwk.Main'
+}
+
+// Shadow configuration - generates a fat jar with all dependencies
+shadowJar {
+    archiveBaseName.set('HaloDiscordBot')
+    archiveVersion.set('')                      // remove version
+    archiveClassifier.set('')                   // no classifier
+    archiveFileName.set('HaloDiscordBot.jar')   // force exact filename
+
+    manifest {
+        attributes 'Main-Class': application.mainClass
+    }
+}
+
+// Make the build task also produce the shadow jar
+tasks.build {
+    dependsOn shadowJar
+}
+
+// Java version
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
