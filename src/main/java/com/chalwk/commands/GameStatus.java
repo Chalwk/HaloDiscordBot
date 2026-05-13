@@ -24,12 +24,12 @@ public class GameStatus extends BaseCommand {
 
     @Override
     public CommandData getCommandData() {
-        return Commands.slash("game_status", "Show game event forwarder status for all connected SAPP servers");
+        return Commands.slash("game_status", "Show game event status for all connected SAPP servers");
     }
 
     @Override
     public String getDescription() {
-        return "Show game event forwarder status";
+        return "Show game event status";
     }
 
     @Override
@@ -56,7 +56,7 @@ public class GameStatus extends BaseCommand {
                     .append(String.format("└ Uptime: %s\n\n", uptime));
         }
 
-        EmbedBuilder embed = new EmbedBuilder(EmbedUtil.createEmbed("📡 Game Event Forwarder Status", description.toString()));
+        EmbedBuilder embed = new EmbedBuilder(EmbedUtil.createEmbed("📡 Game Event Status", description.toString()));
         event.replyEmbeds(embed.build()).setEphemeral(true).queue();
     }
 

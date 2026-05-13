@@ -67,7 +67,7 @@ public class GameEventProcessor {
         }
         if (channelId == null || channelId.isBlank()) {
             System.err.println("No destination channel configured for event '" + eventType +
-                    "' on server '" + serverName + "' and no global fallback.");
+                    "' on server '" + serverName + "'.");
             return;
         }
 
