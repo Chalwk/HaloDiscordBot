@@ -7,6 +7,7 @@ import net.dv8tion.jda.api.JDA;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -27,7 +28,7 @@ public class GameEventTcpServer {
     public void start() {
         int port = config.getTcpPort();
         new Thread(() -> {
-            try (ServerSocket serverSocket = new ServerSocket(port)) {
+            try (ServerSocket serverSocket = new ServerSocket(port, 0, InetAddress.getLoopbackAddress())) {
                 System.out.println("TCP server listening on port " + port);
                 while (!Thread.currentThread().isInterrupted()) {
                     Socket clientSocket = serverSocket.accept();
