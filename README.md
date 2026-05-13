@@ -22,8 +22,8 @@ forwarding in-game events as rich Discord embeds.
 3. In-game events are packed into key-value strings and sent to the bot, which formats them as Discord embeds.
 4. Discord users can use `/game_status` to check the bot's connection and event count.
 
-> **Note:** This bot is currently **one-way** (game → Discord). It does **not** yet send commands back to the game
-> server.
+> [!NOTE]
+> This bot is currently **one-way** (game → Discord). It does **not** yet send commands back to the game server.
 
 ---
 
