@@ -30,9 +30,9 @@ public class Main {
         jda.awaitReady();
 
         List<GameEventProcessor> allProcessors = new ArrayList<>();
-        List<Config.TcpServerConfig> servers = config.getTcpServers();
+        List<Config.HaloServerConfig> servers = config.getHaloServers();
 
-        for (Config.TcpServerConfig serverConfig : servers) {
+        for (Config.HaloServerConfig serverConfig : servers) {
             GameEventTcpServer server = new GameEventTcpServer(jda, config, serverConfig.name(), serverConfig.port());
             server.start();
             allProcessors.add(server.getProcessor());

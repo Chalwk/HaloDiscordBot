@@ -13,13 +13,11 @@ import java.net.Socket;
 
 public class GameEventTcpServer {
 
-    private final Config config;
     private final GameEventProcessor processor;
     private final int port;
     private final String serverName;
 
     public GameEventTcpServer(JDA jda, Config config, String serverName, int port) {
-        this.config = config;
         this.serverName = serverName;
         this.port = port;
         this.processor = new GameEventProcessor(jda, config, serverName, port);

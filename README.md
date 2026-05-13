@@ -10,6 +10,8 @@ Discord, forwarding in-game events as rich Discord embeds.
 - **Real-time event forwarding** - Chat, deaths, scores, joins, leaves, map starts/ends, admin logins, and more.
 - **Multiple server support** - One Discord bot can handle several Halo servers simultaneously, each on its own TCP
   port.
+- **Per‑server Discord channels** - Each game server can send its events to different Discord channels, avoiding
+  cross‑server spam.
 - **Configurable embeds** - Custom titles, colours, descriptions, and even per-subtype death/score messages.
 - **TCP communication** - Lightweight text protocol over configurable ports.
 - **Automatic reconnection** - The Lua script automatically reconnects if the connection drops.
@@ -19,10 +21,12 @@ Discord, forwarding in-game events as rich Discord embeds.
 
 ## How It Works
 
-1. The Java bot opens one or more TCP servers on the ports defined in `config.yml`.
+1. The Java bot opens one or more TCP servers on the ports defined in `HALO_SERVERS` inside `config.yml`.
 2. Each Halo server runs a Lua script (`discord.lua`) that connects to the bot on its dedicated port.
 3. In-game events are packed into key-value strings and sent to the bot, which formats them as Discord embeds.
-4. Discord users can use `/game_status` to check the connection and event count for **each** connected game server.
+4. For each event, the bot first checks if the **source game server** defines its own channel mapping for that event
+   type (via an optional `channels` block). If not, it falls back to the global `EVENT_CHANNELS`.
+5. Discord users can use `/game_status` to check the connection and event count for **each** connected game server.
 
 > [!NOTE]
 > This bot is currently **one-way** (game → Discord). It does **not** yet send commands back to the game servers.
@@ -91,13 +95,23 @@ Invite the bot to your server.
 Find your Discord channel IDs (enable Developer Mode in Discord → right-click channel → *Copy ID*).  
 Edit `config.yml`:
 
-```yaml
-EVENT_CHANNELS:
-  general: "xxxxxxxxxxxxxxxx"
-  admin: "xxxxxxxxxxxxxxxx"
-```
-
 Then reference these keys in each event's `channel:` field.
+
+**To send events from a specific game server to different channels**, add a `channels` block inside its `HALO_SERVERS`
+entry:
+
+```yaml
+HALO_SERVERS:
+  - name: "Main Server"
+    port: 47652
+    channels:
+      general: "1504095256184881163"   # overrides global
+      admin: "1504095321918275765"
+      # chat: "another_channel_id"
+
+  - name: "Secondary Server"
+    port: 47653
+```
 
 ---
 
@@ -112,7 +126,7 @@ java -jar HaloDiscordBot.jar
 The bot will:
 
 - Connect to Discord
-- Start TCP servers on **all ports** defined in `config.yml`
+- Start TCP servers on **all ports** defined in `HALO_SERVERS`
 - Load slash commands automatically
 
 Leave the terminal open. The bot must be **running before** each game server loads `discord.lua`.
@@ -125,14 +139,14 @@ At the top of `discord.lua` you can adjust:
 
 ```lua
 local host = "127.0.0.1"       -- bot's IP (same machine)
-local port = 47652             -- must match one of the ports in config.yml
+local port = 47652             -- must match one of the ports in HALO_SERVERS
 local auto_connect = true      -- automatically connect on script load
 local reconnect_interval = 5   -- seconds between reconnection attempts
 local max_queue_size = 200     -- max queued messages if disconnected
 ```
 
 If you run multiple Halo servers, give each server's `discord.lua` a **different port** (e.g., 47652, 47653, …) and
-define those ports in the bot's `TCP_SERVERS` list.
+define those ports in the bot's `HALO_SERVERS` list.
 
 The script automatically reconnects if the connection drops.
 
@@ -155,25 +169,27 @@ The bot parses these lines and builds Discord embeds according to `config.yml`.
 
 ## Configuration File (`config.yml`)
 
-### `TCP_SERVERS` (new, multi-server)
+### `HALO_SERVERS`
 
-List of game servers the bot should listen for. Each entry requires a unique `name` and `port`.
+List of game servers the bot should listen for. Each entry requires a unique `name` and `port`, and `channels` map.  
 
 ```yaml
-TCP_SERVERS:
+HALO_SERVERS:
   - name: "Main Server"
     port: 47652
+    channels:
+      general: "123456789012345678"
+      admin: "234567890123456789"
   - name: "Secondary Server"
     port: 47653
+    channels:
+      general: "123456789012345678"
+      admin: "234567890123456789"
 ```
-
-> **Backward compatibility**  
-> If `TCP_SERVERS` is not present, the bot falls back to the old `TCP_PORT` setting and creates a single server named
-`"Default"`.
 
 ### `EVENT_CHANNELS`
 
-Maps a short name (e.g., `general`, `admin`) to a Discord channel ID.
+Maps a short name (e.g., `general`, `admin`) to a Discord channel ID. These are used as the global fallback.
 
 ### `COMMAND_PERMISSIONS`
 
@@ -187,7 +203,7 @@ Each event type (`event_chat`, `event_death`, …) can have:
 | Field         | Description                                                              |
 |---------------|--------------------------------------------------------------------------|
 | `enabled`     | `true` or `false`                                                        |
-| `channel`     | Key from `EVENT_CHANNELS`                                                |
+| `channel`     | Key from `EVENT_CHANNELS` (or a server’s per‑server `channels`)          |
 | `title`       | Embed title (supports placeholders like `{name}`)                        |
 | `color`       | Discord colour name (`RED`, `BLUE`, etc.) or hex (`#FFAA00`)             |
 | `description` | Embed description (supports placeholders)                                |

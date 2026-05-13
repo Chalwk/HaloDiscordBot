@@ -41,7 +41,6 @@ public class GameEventProcessor {
         totalEventsProcessed.incrementAndGet();
         lastEventTime.set(Instant.now());
 
-        // Parse: event_type|key=value|key=value...
         String[] parts = rawLine.split("\\|");
         if (parts.length == 0) return;
 
@@ -60,20 +59,21 @@ public class GameEventProcessor {
         EmbedBuilder embed = buildEmbedFromConfig(eventType, data);
         if (embed == null) return;
 
-        // Determine target channel
         EventEmbedConfig embedConfig = config.getEventEmbedConfig(eventType);
         String channelId = null;
         if (embedConfig != null && embedConfig.channelKey() != null) {
-            channelId = config.getEventChannelId(embedConfig.channelKey());
+            // Use per‑server channel lookup
+            channelId = config.getEventChannelId(serverName, embedConfig.channelKey());
         }
         if (channelId == null || channelId.isBlank()) {
-            System.err.println("No destination channel configured for event '" + eventType + "' and no global fallback set.");
+            System.err.println("No destination channel configured for event '" + eventType +
+                    "' on server '" + serverName + "' and no global fallback.");
             return;
         }
 
         TextChannel channel = jda.getTextChannelById(channelId);
         if (channel == null) {
-            System.err.println("Invalid channel ID: " + channelId + " for event " + eventType);
+            System.err.println("Invalid channel ID: " + channelId + " for event " + eventType + " on server " + serverName);
             return;
         }
 

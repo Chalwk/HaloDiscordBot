@@ -15,27 +15,42 @@ public class Config {
 
     private final Map<String, Object> data;
     private final Map<String, EventEmbedConfig> eventEmbedConfigs = new HashMap<>();
-    private final Map<String, String> eventChannels = new HashMap<>();
+    private final Map<String, HaloServerConfig> serverConfigs = new HashMap<>();
 
     public Config() {
         try (InputStream input = new FileInputStream("config.yml")) {
             Yaml yaml = new Yaml();
             data = yaml.load(input);
-            loadEventChannels();
             loadEventEmbedConfigs();
+            loadHaloServers();
         } catch (Exception e) {
             throw new RuntimeException("Failed to load config.yml", e);
         }
     }
 
-    private void loadEventChannels() {
-        Map<String, Object> channelsMap = (Map<String, Object>) data.get("EVENT_CHANNELS");
-        if (channelsMap == null) return;
-        for (Map.Entry<String, Object> entry : channelsMap.entrySet()) {
-            String key = entry.getKey();
-            Object val = entry.getValue();
-            if (val instanceof String) {
-                eventChannels.put(key, (String) val);
+    private void loadHaloServers() {
+        Object serversObj = data.get("HALO_SERVERS");
+        if (serversObj instanceof List<?>) {
+            for (Object item : (List<?>) serversObj) {
+                if (item instanceof Map<?, ?> map) {
+                    String name = (String) map.get("name");
+                    Object portObj = map.get("port");
+                    int port = (portObj instanceof Number) ? ((Number) portObj).intValue() : 0;
+                    if (port <= 0 || name == null || name.isBlank()) continue;
+
+                    Map<String, String> perServerChannels = new HashMap<>();
+                    Object channelsObj = map.get("channels");
+                    if (channelsObj instanceof Map<?, ?>) {
+                        for (Map.Entry<?, ?> entry : ((Map<?, ?>) channelsObj).entrySet()) {
+                            String key = entry.getKey().toString();
+                            Object val = entry.getValue();
+                            if (val instanceof String) {
+                                perServerChannels.put(key, (String) val);
+                            }
+                        }
+                    }
+                    serverConfigs.put(name, new HaloServerConfig(name, port, perServerChannels));
+                }
             }
         }
     }
@@ -118,35 +133,22 @@ public class Config {
         return eventEmbedConfigs.getOrDefault(eventType, null);
     }
 
-    public String getEventChannelId(String channelKey) {
+    public String getEventChannelId(String serverName, String channelKey) {
         if (channelKey == null) return null;
-        return eventChannels.get(channelKey);
+        HaloServerConfig server = serverConfigs.get(serverName);
+        if (server != null && server.perServerChannels().containsKey(channelKey)) {
+            return server.perServerChannels().get(channelKey);
+        }
+        return null;
     }
 
-    public List<TcpServerConfig> getTcpServers() {
-        List<TcpServerConfig> servers = new ArrayList<>();
-        Object serversObj = data.get("TCP_SERVERS");
-        if (serversObj instanceof List<?>) {
-            for (Object item : (List<?>) serversObj) {
-                if (item instanceof Map<?, ?> map) {
-                    String name = (String) map.get("name");
-                    Object portObj = map.get("port");
-                    int port = (portObj instanceof Number) ? ((Number) portObj).intValue() : 0;
-                    if (port > 0 && name != null && !name.isBlank()) {
-                        servers.add(new TcpServerConfig(name, port));
-                    }
-                }
-            }
-        }
-        if (!servers.isEmpty()) {
-            return servers;
-        }
-        return servers;
+    public List<HaloServerConfig> getHaloServers() {
+        return new ArrayList<>(serverConfigs.values());
     }
 
     public String getDiscordBotToken() {
         return System.getenv("HALO_DISCORD_BOT_TOKEN");
     }
 
-    public record TcpServerConfig(String name, int port) {}
+    public record HaloServerConfig(String name, int port, Map<String, String> perServerChannels) {}
 }
