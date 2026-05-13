@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory;
 
 public final class LoggerUtil {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("HaloDiscordBot");
+    private static final Logger LOGGER = LoggerFactory.getLogger(LoggerUtil.class);
 
     private LoggerUtil() {
 
