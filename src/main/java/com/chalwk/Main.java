@@ -7,6 +7,7 @@ import com.chalwk.listeners.SlashCommandListener;
 import com.chalwk.tcp.GameEventProcessor;
 import com.chalwk.tcp.GameEventTcpServer;
 import com.chalwk.utils.CommandManager;
+import com.chalwk.utils.LoggerUtil;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.requests.GatewayIntent;
@@ -23,7 +24,7 @@ public class Main {
             throw new IllegalStateException("HALO_DISCORD_BOT_TOKEN environment variable is not set.");
         }
 
-        System.out.println("Starting HaloDiscordBot...");
+        LoggerUtil.info("Starting HaloDiscordBot...");
 
         JDA jda = JDABuilder.createDefault(token)
                 .enableIntents(GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT)
@@ -47,6 +48,6 @@ public class Main {
         jda.addEventListener(new SlashCommandListener(cmdManager));
         jda.updateCommands().addCommands(cmdManager.getCommandDataList()).queue();
 
-        System.out.println("\nHaloDiscordBot online. Listening on " + servers.size() + " port(s).");
+        LoggerUtil.info("\nHaloDiscordBot online. Listening on {} port(s).", servers.size());
     }
 }

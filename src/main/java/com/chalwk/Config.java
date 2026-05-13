@@ -7,8 +7,10 @@ import org.yaml.snakeyaml.Yaml;
 import java.awt.*;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class Config {
@@ -55,6 +57,7 @@ public class Config {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void loadEventEmbedConfigs() {
         Map<String, Object> gameEvents = (Map<String, Object>) data.get("GAME_EVENTS");
         if (gameEvents == null) return;
@@ -150,5 +153,6 @@ public class Config {
         return System.getenv("HALO_DISCORD_BOT_TOKEN");
     }
 
-    public record HaloServerConfig(String name, int port, Map<String, String> perServerChannels) {}
+    public record HaloServerConfig(String name, int port, Map<String, String> perServerChannels) {
+    }
 }

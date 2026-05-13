@@ -4,6 +4,7 @@ package com.chalwk.tcp;
 
 import com.chalwk.Config;
 import com.chalwk.EventEmbedConfig;
+import com.chalwk.utils.LoggerUtil;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
@@ -62,18 +63,16 @@ public class GameEventProcessor {
         EventEmbedConfig embedConfig = config.getEventEmbedConfig(eventType);
         String channelId = null;
         if (embedConfig != null && embedConfig.channelKey() != null) {
-            // Use per‑server channel lookup
             channelId = config.getEventChannelId(serverName, embedConfig.channelKey());
         }
         if (channelId == null || channelId.isBlank()) {
-            System.err.println("No destination channel configured for event '" + eventType +
-                    "' on server '" + serverName + "'.");
+            LoggerUtil.error("No destination channel configured for event '{}' on server '{}'.", eventType, serverName);
             return;
         }
 
         TextChannel channel = jda.getTextChannelById(channelId);
         if (channel == null) {
-            System.err.println("Invalid channel ID: " + channelId + " for event " + eventType + " on server " + serverName);
+            LoggerUtil.error("Invalid channel ID: {} for event {} on server {}", channelId, eventType, serverName);
             return;
         }
 

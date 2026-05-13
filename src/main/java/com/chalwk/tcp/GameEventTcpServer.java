@@ -3,6 +3,7 @@
 package com.chalwk.tcp;
 
 import com.chalwk.Config;
+import com.chalwk.utils.LoggerUtil;
 import net.dv8tion.jda.api.JDA;
 
 import java.io.BufferedReader;
@@ -30,16 +31,15 @@ public class GameEventTcpServer {
     public void start() {
         new Thread(() -> {
             try (ServerSocket serverSocket = new ServerSocket(port, 0, InetAddress.getLoopbackAddress())) {
-                System.out.println("TCP Server started for '" + serverName + "' on port " + port + ".");
+                LoggerUtil.info("TCP Server started for '{}' on port {}.", serverName, port);
                 while (!Thread.currentThread().isInterrupted()) {
                     Socket clientSocket = serverSocket.accept();
-                    System.out.println("[" + serverName + "] New connection from " + clientSocket.getRemoteSocketAddress());
+                    LoggerUtil.info("[{}] New connection from {}", serverName, clientSocket.getRemoteSocketAddress());
                     processor.setHasConnectedClient(true);
                     new Thread(() -> handleClient(clientSocket)).start();
                 }
             } catch (Exception e) {
-                System.err.println("TCP server error for " + serverName + ": " + e.getMessage());
-                e.printStackTrace();
+                LoggerUtil.error("TCP server error for {}: {}", serverName, e.getMessage(), e);
             }
         }).start();
     }
@@ -53,11 +53,11 @@ public class GameEventTcpServer {
                     processor.processEvent(line);
                 }
             } catch (Exception e) {
-                System.err.println("[" + serverName + "] Client connection error: " + e.getMessage());
+                LoggerUtil.error("[{}] Client connection error: {}", serverName, e.getMessage(), e);
             }
         } catch (Exception ignored) {
         } finally {
-            System.out.println("[" + serverName + "] Client disconnected");
+            LoggerUtil.info("[{}] Client disconnected", serverName);
             processor.setHasConnectedClient(false);
         }
     }

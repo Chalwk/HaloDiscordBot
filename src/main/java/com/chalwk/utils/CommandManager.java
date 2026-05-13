@@ -8,7 +8,9 @@ import org.yaml.snakeyaml.Yaml;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class CommandManager {
@@ -29,10 +31,7 @@ public class CommandManager {
                 .collect(Collectors.toList());
     }
 
-    public Collection<Command> getCommands() {
-        return commands.values();
-    }
-
+    @SuppressWarnings("unchecked")
     public void loadPermissionsFromConfig(String configPath) {
         try (FileInputStream fis = new FileInputStream(configPath)) {
             Yaml yaml = new Yaml();
@@ -48,14 +47,14 @@ public class CommandManager {
                         Permission perm = Permission.valueOf(permName.toUpperCase());
                         requiredPermissions.put(cmdName, perm);
                     } catch (IllegalArgumentException e) {
-                        System.err.println("Invalid permission '" + permName + "' for command " + cmdName);
+                        LoggerUtil.error("Invalid permission '{}' for command {}", permName, cmdName);
                     }
                 }
             }
         } catch (FileNotFoundException e) {
-            System.err.println("Config file not found: " + configPath);
+            LoggerUtil.error("Config file not found: {}", configPath);
         } catch (Exception e) {
-            e.printStackTrace();
+            LoggerUtil.error("Failed to load permissions from config", e);
         }
     }
 
