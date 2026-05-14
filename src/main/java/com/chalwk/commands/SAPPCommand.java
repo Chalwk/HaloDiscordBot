@@ -20,7 +20,7 @@ public class SAPPCommand extends BaseCommand {
 
     private final List<GameEventProcessor> processors;
 
-    public SAPPCommand(List<GameEventProcessor> processors, Config config) {
+    public SAPPCommand(List<GameEventProcessor> processors) {
         this.processors = processors;
     }
 

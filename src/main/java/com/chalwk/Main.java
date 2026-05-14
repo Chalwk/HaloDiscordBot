@@ -48,7 +48,7 @@ public class Main {
         // set up slash commands and permissions
         CommandManager cmdManager = new CommandManager();
         cmdManager.register(new GameStatus(allProcessors));
-        cmdManager.register(new SAPPCommand(allProcessors, config));
+        cmdManager.register(new SAPPCommand(allProcessors));
         cmdManager.loadPermissionsFromConfig("config.yml");
 
         // Register listeners: slash commands and chat forwarding
