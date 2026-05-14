@@ -8,7 +8,7 @@ DESCRIPTION:      Logs Halo server events using LuaJitSocket TCP.
                      https://github.com/Chalwk/HaloDiscordBot
 
                   2. LuaJIT Socket supporting Lua 5.1
-                     https://github.com/CapsAdmin/luajitsocket
+                     https://github.com/CapsAdmin/luajitsocket/blob/master/ljsocket.lua
 
 Copyright (c) 2026 Jericho Crosby (Chalwk)
 =====================================================================================
@@ -56,22 +56,6 @@ local distance_tag
 local COMMAND_TYPE = { [0] = "RCON", [1] = "CONSOLE", [2] = "CHAT", [3] = "UNKNOWN" }
 local CHAT_TYPE = { [0] = "GLOBAL", [1] = "TEAM", [2] = "VEHICLE", [3] = "UNKNOWN" }
 local GAMETYPE_MAP = { ctf = 1, race = 2, slayer = 4 }
-local CALLBACKS = {
-    [cb['EVENT_CHAT']] = 'OnChat',
-    [cb['EVENT_COMMAND']] = 'OnCommand',
-    [cb['EVENT_DIE']] = 'OnDeath',
-    [cb['EVENT_SCORE']] = 'OnScore',
-    [cb['EVENT_DAMAGE_APPLICATION']] = 'OnDamage',
-    [cb['EVENT_JOIN']] = 'OnJoin',
-    [cb['EVENT_LEAVE']] = 'OnQuit',
-    [cb['EVENT_GAME_END']] = 'OnEnd',
-    [cb['EVENT_GAME_START']] = 'OnStart',
-    [cb['EVENT_SNAP']] = 'OnSnap',
-    [cb['EVENT_SPAWN']] = 'OnSpawn',
-    [cb['EVENT_LOGIN']] = 'OnLogin',
-    [cb['EVENT_MAP_RESET']] = "OnReset",
-    [cb['EVENT_TEAM_SWITCH']] = 'OnSwitch'
-}
 
 local PIRATED_HASHES = {
     ['388e89e69b4cc08b3441f25959f74103'] = true,
@@ -578,9 +562,22 @@ function OnScriptLoad()
         return
     end
     gametype_base = read_dword(sig_scan("B9360000008BF3BF78545F00") + 0x8)
-    for event, handler in pairs(CALLBACKS) do
-        register_callback(event, handler)
-    end
+
+    register_callback(cb['EVENT_CHAT'], 'OnChat')
+    register_callback(cb['EVENT_COMMAND'], 'OnCommand')
+    register_callback(cb['EVENT_DAMAGE_APPLICATION'], 'OnDamage')
+    register_callback(cb['EVENT_DIE'], 'OnDeath')
+    register_callback(cb['EVENT_GAME_END'], 'OnEnd')
+    register_callback(cb['EVENT_GAME_START'], 'OnStart')
+    register_callback(cb['EVENT_JOIN'], 'OnJoin')
+    register_callback(cb['EVENT_LEAVE'], 'OnQuit')
+    register_callback(cb['EVENT_LOGIN'], 'OnLogin')
+    register_callback(cb['EVENT_MAP_RESET'], "OnReset")
+    register_callback(cb['EVENT_SCORE'], 'OnScore')
+    register_callback(cb['EVENT_SNAP'], 'OnSnap')
+    register_callback(cb['EVENT_SPAWN'], 'OnSpawn')
+    register_callback(cb['EVENT_TEAM_SWITCH'], 'OnSwitch')
+
     if auto_connect then
         connect_to_bot(host, port)
         if not is_connected then schedule_reconnect() end
@@ -588,6 +585,4 @@ function OnScriptLoad()
     OnStart(1)
 end
 
-function OnScriptUnload()
-    disconnect()
-end
+function OnScriptUnload() disconnect() end

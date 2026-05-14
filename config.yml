@@ -5,11 +5,6 @@ HALO_SERVERS:
     channels:                   # map channel keys (like "general" or "admin") to actual Discord channel IDs
       general: "1504095256184881163"
       admin: "1504095321918275765"
-  - name: "SPCLib-Uber Racing"
-    port: 47653
-    channels:
-      general: "1504095256184881163"
-      admin: "1504095321918275765"
 
 # COMMAND_PERMISSIONS: which Discord permissions are needed for each slash command
 # if a command isn't listed here, anyone can use it

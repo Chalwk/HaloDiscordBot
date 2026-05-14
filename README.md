@@ -37,8 +37,7 @@ Discord, forwarding in-game events as rich Discord embeds.
 
 - **Java 17+**
 - **SAPP (10.2.1)** or **Phasor V2**
-- **LuaJIT** with a TCP library supporting Lua 5.1 (
-  e.g. [CapsAdmin/luajitsocket](https://github.com/CapsAdmin/luajitsocket) or any compatible alternative)
+- **LuaJIT Socket** supporting Lua 5.1 [CapsAdmin/luajitsocket](https://github.com/CapsAdmin/luajitsocket/blob/master/ljsocket.lua)
 
 ---
 
@@ -50,7 +49,7 @@ Put the following in your server's root directory (where `sapp.dll` resides):
 
 - `HaloDiscordBot.jar`
 - `config.yml`
-- `ljsocket.lua` (or your chosen TCP library)
+- `ljsocket.lua`
 
 Place `discord.lua` in your server's `lua` folder.  
 For **multiple servers**, you can either:
