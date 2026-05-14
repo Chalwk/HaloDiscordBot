@@ -1,6 +1,6 @@
 # HALO_SERVERS: list all the Halo game servers you want this bot to listen to
 HALO_SERVERS:
-  - name: "DEV SERVER"          # just a friendly name, shows up in /game_status
+  - name: "DEV SERVER"          # shows up in /game_status
     port: 47652                 # the TCP port where SAPP will send game events
     channels:                   # map channel keys (like "general" or "admin") to actual Discord channel IDs
       general: "1504095256184881163"

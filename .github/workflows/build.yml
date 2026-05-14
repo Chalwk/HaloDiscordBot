@@ -1,0 +1,46 @@
+name: Build HaloDiscordBot JAR
+
+on:
+  push:
+    branches:
+      - main          # or 'master', depending on your default branch name
+    tags:
+      - 'v*'          # triggers when you push a tag like v1.0.0, v2.1, etc.
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:   # allows manual triggering from GitHub UI
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'   # Eclipse Temurin (formerly AdoptOpenJDK)
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build with Gradle (shadowJar)
+        run: ./gradlew shadowJar
+
+      - name: Upload JAR as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: HaloDiscordBot
+          path: build/libs/HaloDiscordBot.jar
+          if-no-files-found: error
+
+      - name: Create Release (if tag push)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: build/libs/HaloDiscordBot.jar
+          generate_release_notes: true

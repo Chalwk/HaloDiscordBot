@@ -3,6 +3,8 @@
 A Java application using [JDA](https://github.com/discord-jda/JDA) that connects multiple Halo servers (SAPP/Phasor) to
 Discord, forwarding in-game events as rich Discord embeds.
 
+[![Java](https://img.shields.io/badge/Java-17%2B-orange.svg)](https://github.com/Chalwk/HaloDiscordBot) | [![Download JAR](https://img.shields.io/badge/Download-Latest%20JAR-blue?logo=githubactions&logoColor=white)](https://github.com/Chalwk/HaloDiscordBot/actions?query=workflow%3A%22Build+HaloDiscordBot+JAR%22) | [![Build Status](https://img.shields.io/github/actions/workflow/status/Chalwk/HaloDiscordBot/build.yml?branch=main&label=Download%20JAR&logo=github)](https://github.com/Chalwk/HaloDiscordBot/actions?query=workflow%3A%22Build+HaloDiscordBot+JAR%22)
+
 ---
 
 ## Features
@@ -102,7 +104,7 @@ java -jar HaloDiscordBot.jar
 The bot will:
 
 - Connect to Discord
-- Start TCP servers on **all ports** defined in `HALO_SERVERS`
+- Start TCP servers on **all ports** defined in `HALO_SERVERS` table of `config.yml`.
 - Load slash commands automatically
 
 Leave the terminal open. The bot must be **running before** each game server loads `discord.lua`.
@@ -114,14 +116,14 @@ Leave the terminal open. The bot must be **running before** each game server loa
 At the top of `discord.lua` you can adjust:
 
 ```lua
-local host = "127.0.0.1"       -- bot's IP (same machine)
-local port = 47652             -- must match one of the ports in HALO_SERVERS
-local auto_connect = true      -- automatically connect on script load
-local reconnect_interval = 5   -- seconds between reconnection attempts
-local max_queue_size = 200     -- max queued messages if disconnected
+local host = "127.0.0.1"     -- default bot address
+local port = 47652           -- default bot port
+local auto_connect = true    -- automatically connect on script load
+local reconnect_interval = 5 -- seconds between reconnection attempts
+local max_queue_size = 200   -- maximum message queue size
 ```
 
-If you run multiple Halo servers, give each server's `discord.lua` a **different port** (e.g., 47652, 47653, …) and
+If you run multiple Halo servers, give each server's `discord.lua` a **different port** (e.g., 47652, 47653, ...) and
 define those ports in the bot's `HALO_SERVERS` list.
 
 The script automatically reconnects if the connection drops.
@@ -174,7 +176,7 @@ Only `/game_status` exists; you can add others if you extend the bot.
 
 ### `GAME_EVENTS.embeds`
 
-Each event type (`event_chat`, `event_death`, …) can have:
+Each event type (`event_chat`, `event_death`, ...) can have:
 
 | Field         | Description                                                              |
 |---------------|--------------------------------------------------------------------------|
