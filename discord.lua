@@ -266,7 +266,6 @@ function OnPollIncoming()
             --cprint("[HaloDiscordBot] Unexpected data type: " .. type(data) .. " = " .. tostring(data))
         end
         process_buffer()
-
     elseif partial then
         -- Only treat as real data if it's a string (numbers are just error codes)
         if type(partial) == "string" then
@@ -279,12 +278,10 @@ function OnPollIncoming()
             -- (Uncomment the next line for debugging once, but it will spam the SAPP console)
             -- cprint("[HaloDiscordBot] Non-blocking read returned partial numeric: " .. tostring(partial))
         end
-
     elseif err == "closed" then
         cprint("[HaloDiscordBot] Connection closed by remote host")
         disconnect()
         if auto_connect then schedule_reconnect() end
-
     elseif err ~= "timeout" and err ~= "tryagain" then
         cprint("[HaloDiscordBot] Read error: " .. tostring(err))
         disconnect()
@@ -484,8 +481,7 @@ local function handle_discord_command(id, command)
     elseif sub_cmd == "status" then
         local status = is_connected and "connected" or "disconnected"
         local auto_str = auto_connect and "ON" or "OFF"
-        tell(string_format("[HaloDiscordBot] Status: %s | Auto-connect: %s | %s:%d",
-            status, auto_str, host, port))
+        tell(string_format("[HaloDiscordBot] Status: %s | Auto-connect: %s | %s:%d", status, auto_str, host, port))
         return false
     elseif sub_cmd == "reconnect" then
         disconnect()
@@ -575,7 +571,6 @@ function OnDeath(victim, killer)
 end
 
 function OnScriptLoad()
-
     -- Load socket library
     if not load_socket() then
         cprint("[HaloDiscordBot] FATAL: LuaJitSocket missing, cannot send events")
@@ -608,4 +603,7 @@ function OnScriptLoad()
     OnStart(1) -- in case script is loaded mid-game
 end
 
-function OnScriptUnload() disconnect() end
+function OnScriptUnload()
+    if is_connected then send_data("SHUTDOWN\n") end
+    disconnect()
+end

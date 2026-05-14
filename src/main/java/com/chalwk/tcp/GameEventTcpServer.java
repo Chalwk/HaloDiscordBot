@@ -67,7 +67,7 @@ public class GameEventTcpServer {
              BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
              PrintWriter writer = new PrintWriter(socket.getOutputStream(), true)) {
 
-            activeWriter.set(writer);   // store writer for sending commands
+            activeWriter.set(writer);
 
             try {
                 String line;
@@ -75,11 +75,14 @@ public class GameEventTcpServer {
                     if (line.isBlank()) continue;
                     processor.processEvent(line);
                 }
+            } catch (java.net.SocketException e) {
+                // Connection reset or broken pipe -> client disconnected abruptly
+                LoggerUtil.info("[{}] Client disconnected ({}).", serverName, e.getMessage());
             } catch (Exception e) {
                 LoggerUtil.error("[{}] Client connection error: {}", serverName, e.getMessage(), e);
             }
         } catch (Exception ignored) {
-            // closing the socket might throw, but we don't really care here
+            // Socket close may throw, but we don't need to handle it
         } finally {
             activeWriter.set(null);
             LoggerUtil.info("[{}] Client disconnected", serverName);
