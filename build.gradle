@@ -20,12 +20,10 @@ dependencies {
     implementation 'ch.qos.logback:logback-classic:1.5.32'
 }
 
-// Application configuration (defines the main class)
 application {
     mainClass = 'com.chalwk.Main'
 }
 
-// Shadow configuration - generates a fat jar with all dependencies
 shadowJar {
     archiveBaseName.set('HaloDiscordBot')
     archiveVersion.set('')                      // remove version
@@ -37,12 +35,10 @@ shadowJar {
     }
 }
 
-// Make the build task also produce the shadow jar
 tasks.build {
     dependsOn shadowJar
 }
 
-// Java version
 java {
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
