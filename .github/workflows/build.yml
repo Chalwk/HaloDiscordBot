@@ -31,16 +31,23 @@ jobs:
       - name: Build with Gradle
         run: gradle shadowJar
 
-      - name: Upload JAR as artifact
+      - name: Prepare release package
+        run: |
+          mkdir -p release-package
+          cp build/libs/HaloDiscordBot.jar release-package/
+          cp config.yml release-package/
+          cp discord.lua release-package/
+
+      - name: Upload release package as artifact
         uses: actions/upload-artifact@v4
         with:
           name: HaloDiscordBot
-          path: build/libs/HaloDiscordBot.jar
+          path: release-package/
           if-no-files-found: error
 
       - name: Create Release (if tag push)
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v1
         with:
-          files: build/libs/HaloDiscordBot.jar
+          files: release-package/*
           generate_release_notes: true

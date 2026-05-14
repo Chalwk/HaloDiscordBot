@@ -3,7 +3,7 @@
 A Java application using [JDA](https://github.com/discord-jda/JDA) that connects multiple Halo servers (SAPP/Phasor) to
 Discord, forwarding in-game events as rich Discord embeds.
 
-[![Java](https://img.shields.io/badge/Java-17%2B-orange.svg)](https://github.com/Chalwk/HaloDiscordBot) | [![Download JAR](https://img.shields.io/badge/Download-Latest%20JAR-blue?logo=githubactions&logoColor=white)](https://github.com/Chalwk/HaloDiscordBot/actions?query=workflow%3A%22Build+HaloDiscordBot+JAR%22) | [![Build Status](https://img.shields.io/github/actions/workflow/status/Chalwk/HaloDiscordBot/build.yml?branch=main&label=Download%20JAR&logo=github)](https://github.com/Chalwk/HaloDiscordBot/actions?query=workflow%3A%22Build+HaloDiscordBot+JAR%22)
+[![Java](https://img.shields.io/badge/Java-17%2B-orange.svg)](https://github.com/Chalwk/HaloDiscordBot) | [![Download JAR](https://img.shields.io/badge/Download-Latest%20JAR-blue?logo=githubactions&logoColor=white)](https://github.com/Chalwk/HaloDiscordBot/actions?query=workflow%3A%22Build+HaloDiscordBot+JAR%22)
 
 ---
 
@@ -21,25 +21,27 @@ Discord, forwarding in-game events as rich Discord embeds.
 
 ---
 
-## How It Works
+## Download
 
-1. The Java bot opens one or more TCP servers on the ports defined in `HALO_SERVERS` inside `config.yml`.
-2. Each Halo server runs a Lua script (`discord.lua`) that connects to the bot on its dedicated port.
-3. In-game events are packed into key-value strings and sent to the bot, which formats them as Discord embeds.
-4. For each event, the bot first checks if the **source game server** defines its own channel mapping for that event
-   type (via an optional `channels` block). If not, it falls back to the global `EVENT_CHANNELS`.
-5. Discord users can use `/game_status` to check the connection and event count for **each** connected game server.
+The latest stable version of `HaloDiscordBot` is packaged as a zip file containing:
 
-> [!NOTE]
-> This bot is currently **one-way** (game → Discord). It does **not** yet send commands back to the game servers.
+- `HaloDiscordBot.jar` - The main bot application
+- `config.yml` - Configuration file (edit before running)
+- `discord.lua` - Lua script to place SAPP's Lua folder
 
----
+[![Download Latest Release](https://img.shields.io/badge/Download-Latest%20Release-brightgreen?logo=github&logoColor=white)](https://github.com/Chalwk/HaloDiscordBot/releases/latest)
 
-## Requirements
+**How to download:**
 
-- **Java 17+**
-- **SAPP (10.2.1)** or **Phasor V2**
-- **LuaJIT Socket** supporting Lua 5.1 [CapsAdmin/luajitsocket](https://github.com/CapsAdmin/luajitsocket/blob/master/ljsocket.lua)
+1. Click the badge above - it takes you to the **Releases** page.
+2. Look for the latest release (e.g., `v1.0.0`).
+3. Under **Assets**, click `HaloDiscordBot.zip` to download.
+4. Extract the zip - you will get all three files.
+
+> **Development builds (bleeding edge):**  
+> If you want the very latest (but potentially unstable) version, you can also download from
+> the [GitHub Actions](https://github.com/Chalwk/HaloDiscordBot/actions?query=workflow%3A%22Build+HaloDiscordBot+JAR%22)
+> artifacts. However, the **Releases page** is recommended for most users.
 
 ---
 
@@ -47,18 +49,23 @@ Discord, forwarding in-game events as rich Discord embeds.
 
 ### 1. Place Files (on the same machine as the game servers)
 
-Put the following in your server's root directory (where `sapp.dll` resides):
+From the downloaded zip, copy the following files to your Halo server’s root directory (where `sapp.dll` resides):
 
 - `HaloDiscordBot.jar`
 - `config.yml`
-- `ljsocket.lua`
 
-Place `discord.lua` in your server's `lua` folder.  
+Additionally, place `discord.lua` inside your server’s `lua` folder (create it if missing).
+
 For **multiple servers**, you can either:
 
-- Copy `discord.lua` into each server's `lua` folder, or
-- Use a shared location and modify each server's `sapp.ini` to point to the same script - but each server must connect
-  on a **different port**.
+- Copy `discord.lua` into each server’s `lua` folder, or
+- Use a shared location and modify each server’s `sapp.ini` to point to the same script - but each server must connect
+  on a **different port** (see port configuration in `discord.lua` and `config.yml`).
+
+> [!NOTE]
+> The Lua script also requires `ljsocket.lua`
+> from [CapsAdmin/luajitsocket](https://github.com/CapsAdmin/luajitsocket/blob/master/ljsocket.lua). Place it in your
+> server's root directory or `lua` folder as needed.
 
 ### 2. Discord Bot Token
 
@@ -91,9 +98,7 @@ In the Discord Developer Portal:
 
 Invite the bot to your server.
 
----
-
-## Running the Bot
+### 4. Running the Bot
 
 From the server root directory (where `config.yml` is located):
 
@@ -108,6 +113,26 @@ The bot will:
 - Load slash commands automatically
 
 Leave the terminal open. The bot must be **running before** each game server loads `discord.lua`.
+
+---
+
+## How It Works
+
+1. The Java bot opens one or more TCP servers on the ports defined in `HALO_SERVERS` inside `config.yml`.
+2. Each Halo server runs a Lua script (`discord.lua`) that connects to the bot on its dedicated port.
+3. In-game events are packed into key-value strings and sent to the bot, which formats them as Discord embeds.
+4. For each event, the bot first checks if the **source game server** defines its own channel mapping for that event
+   type (via an optional `channels` block). If not, it falls back to the global `EVENT_CHANNELS`.
+5. Discord users can use `/game_status` to check the connection and event count for **each** connected game server.
+
+---
+
+## Requirements
+
+- **Java 17+**
+- **SAPP (10.2.1)** or **Phasor V2**
+- **LuaJIT Socket** supporting Lua
+  5.1 [CapsAdmin/luajitsocket](https://github.com/CapsAdmin/luajitsocket/blob/master/ljsocket.lua)
 
 ---
 
@@ -149,7 +174,7 @@ The bot parses these lines and builds Discord embeds according to `config.yml`.
 
 ### `HALO_SERVERS`
 
-List of game servers the bot should listen for. Each entry requires a unique `name` and `port`, and `channels` map.  
+List of game servers the bot should listen for. Each entry requires a unique `name` and `port`, and `channels` map.
 
 ```yaml
 HALO_SERVERS:
@@ -236,7 +261,6 @@ Requires `ADMINISTRATOR` permission by default (configurable in `COMMAND_PERMISS
 
 ---
 
-## License
+## [LICENSE](LICENSE)
 
-Copyright (c) 2026 Jericho Crosby (Chalwk)  
-Licensed under the MIT License - see the [LICENSE](LICENSE) file.
+Copyright (c) 2026 Jericho Crosby (Chalwk)
