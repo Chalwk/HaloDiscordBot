@@ -24,7 +24,6 @@ local reconnect_interval = 5 -- seconds between reconnection attempts
 local max_queue_size = 200   -- maximum message queue size
 -- CONFIG END --
 
-local char = string.char
 local concat = table.concat
 local pairs, ipairs = pairs, ipairs
 local os_time = os.time
@@ -347,16 +346,6 @@ end
 local function log_event(event_type, data, subtype)
     local event_string = format_event(event_type, data, subtype)
     send_data(event_string .. "\n")
-end
-
-local function read_wide_string(address, length)
-    local bytes = {}
-    for i = 1, length do
-        local byte = read_byte(address + (i - 1) * 2)
-        if byte == 0 then break end
-        bytes[#bytes + 1] = char(byte)
-    end
-    return concat(bytes)
 end
 
 local function get_tag_id(class, name)
