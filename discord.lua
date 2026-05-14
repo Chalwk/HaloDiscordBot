@@ -51,6 +51,7 @@ local mode
 local players
 local score_limit
 local server_name
+local current_request_id = nil
 
 local COMMAND_TYPE = { [0] = "RCON", [1] = "CONSOLE", [2] = "CHAT", [3] = "UNKNOWN" }
 local CHAT_TYPE = { [0] = "GLOBAL", [1] = "TEAM", [2] = "VEHICLE", [3] = "UNKNOWN" }
@@ -239,12 +240,30 @@ local function process_buffer()
 
         line = line:gsub("\r$", "")
 
-        -- Look for "say_all " anywhere in the line
         local say_pos = line:find("say_all ")
         if say_pos then
-            local msg = line:sub(say_pos + 8) -- skip "say_all "
+            local msg = line:sub(say_pos + 8)
             say_all(msg)
             cprint("[HaloDiscordBot] Received from Discord: " .. msg)
+        -- Handle command execution
+        elseif line:find("^exec ") then
+            -- Format: exec <reqId> <playerIndex> <echo> <command>
+            local cmd = line:sub(6)
+            local parts = {}
+            for part in cmd:gmatch("%S+") do table_insert(parts, part) end
+            if #parts >= 4 then
+                local reqId = parts[1]
+                local playerIndex = tonumber(parts[2]) or 0
+                local echo = parts[3] == "1"
+                local command = concat(parts, " ", 4)
+
+                cprint("[HaloDiscordBot] Executing command: " .. command)
+                current_request_id = reqId
+                execute_command(command, playerIndex, echo)
+                current_request_id = nil
+            else
+                cprint("[HaloDiscordBot] Invalid exec format: " .. line)
+            end
         elseif line ~= "" then
             cprint("[HaloDiscordBot] Unknown command: " .. line)
         end
@@ -434,6 +453,14 @@ function OnSnap(id)
     if player then log_event("event_snap", { name = player.name }) end
 end
 
+function OnEcho(playerIndex, message)
+    if current_request_id then
+        log_event("event_echo", { reqId = current_request_id, playerIndex = tostring(playerIndex), message = message })
+    else
+        log_event("event_echo", { playerIndex = tostring(playerIndex), message = message })
+    end
+end
+
 local function handle_discord_command(id, command)
     local player = players[id]
     if not player then return false end
@@ -584,6 +611,7 @@ function OnScriptLoad()
     register_callback(cb['EVENT_SNAP'], 'OnSnap')
     register_callback(cb['EVENT_SPAWN'], 'OnSpawn')
     register_callback(cb['EVENT_TEAM_SWITCH'], 'OnSwitch')
+    register_callback(cb['EVENT_ECHO'], 'OnEcho')
 
     -- Connect to Discord bot
     if auto_connect then

@@ -3,6 +3,7 @@
 package com.chalwk;
 
 import com.chalwk.commands.GameStatus;
+import com.chalwk.commands.SAPPCommand;
 import com.chalwk.listeners.ChatForwardListener;
 import com.chalwk.listeners.SlashCommandListener;
 import com.chalwk.tcp.GameEventProcessor;
@@ -47,6 +48,7 @@ public class Main {
         // set up slash commands and permissions
         CommandManager cmdManager = new CommandManager();
         cmdManager.register(new GameStatus(allProcessors));
+        cmdManager.register(new SAPPCommand(allProcessors, config));
         cmdManager.loadPermissionsFromConfig("config.yml");
 
         // Register listeners: slash commands and chat forwarding

@@ -11,7 +11,9 @@ import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
@@ -32,6 +34,9 @@ public class GameEventProcessor {
     private final AtomicLong totalEventsProcessed = new AtomicLong(0);
     private final AtomicReference<Instant> lastEventTime = new AtomicReference<>(null);
     private final Instant startTime = Instant.now();
+    // Command execution tracking
+    private final Map<String, PendingCommand> pendingCommands = new ConcurrentHashMap<>();
+    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
     private volatile boolean hasConnectedClient = false;
 
     public GameEventProcessor(JDA jda, Config config, String serverName, int serverPort, GameEventTcpServer tcpServer) {
@@ -47,6 +52,34 @@ public class GameEventProcessor {
         String trimmed = message.length() > 200 ? message.substring(0, 200) : message;
         String command = "say_all [Discord] " + discordUser + ": " + trimmed;
         tcpServer.sendCommand(command);
+    }
+
+    public CompletableFuture<String> executeSappCommand(String command, long timeout, TimeUnit unit) {
+        String reqId = java.util.UUID.randomUUID().toString();
+        PendingCommand pending = new PendingCommand();
+        pendingCommands.put(reqId, pending);
+
+        // Schedule total timeout
+        pending.timeoutTask = scheduler.schedule(() -> {
+            PendingCommand removed = pendingCommands.remove(reqId);
+            if (removed != null && !removed.future.isDone()) {
+                String output = String.join("\n", removed.lines);
+                if (output.isEmpty()) {
+                    removed.future.complete(null);
+                } else {
+                    removed.future.complete(output);
+                }
+            }
+        }, timeout, unit);
+
+        // Send command to game server
+        String cmdLine = String.format("exec %s 0 1 %s", reqId, command);
+        tcpServer.sendCommand(cmdLine);
+
+        return pending.future.whenComplete((res, ex) -> {
+            pendingCommands.remove(reqId);
+            if (pending.timeoutTask != null) pending.timeoutTask.cancel(false);
+        });
     }
 
     // Takes a raw line from the TCP stream, parses and sends a Discord embed
@@ -68,6 +101,31 @@ public class GameEventProcessor {
                 String value = unescape(p.substring(eq + 1));
                 data.put(key, value);
             }
+        }
+
+        // Special handling for echo events (command output)
+        if ("event_echo".equals(eventType)) {
+            String reqId = data.get("reqId");
+            String message = data.get("message");
+            if (reqId != null && !reqId.isEmpty()) {
+                PendingCommand pending = pendingCommands.get(reqId);
+                if (pending != null) {
+                    pending.lines.add(message);
+                    // Reset timeout: cancel old and schedule new short delay
+                    if (pending.timeoutTask != null) {
+                        pending.timeoutTask.cancel(false);
+                    }
+                    // Wait 300ms more for potential additional lines
+                    pending.timeoutTask = scheduler.schedule(() -> {
+                        PendingCommand removed = pendingCommands.remove(reqId);
+                        if (removed != null && !removed.future.isDone()) {
+                            removed.future.complete(String.join("\n", removed.lines));
+                        }
+                    }, 300, TimeUnit.MILLISECONDS);
+                }
+                return; // Do not send to Discord channel
+            }
+            return;
         }
 
         EmbedBuilder embed = buildEmbedFromConfig(eventType, data);
@@ -185,5 +243,11 @@ public class GameEventProcessor {
 
     public int getServerPort() {
         return serverPort;
+    }
+
+    private static class PendingCommand {
+        final List<String> lines = new CopyOnWriteArrayList<>();
+        final CompletableFuture<String> future = new CompletableFuture<>();
+        ScheduledFuture<?> timeoutTask;
     }
 }

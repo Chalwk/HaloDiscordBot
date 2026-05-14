@@ -6,11 +6,16 @@ forwarding in-game events as rich Discord embeds. Supports SAPP and Phasor.
 ## Features
 
 - Real-time event notifications: chat, deaths, scores, joins, leaves, map starts/ends, admin logins, and more.
+- **Bidirectional chat**: Send messages from Discord to in-game chat (channel-to-server mapping).
+- **Execute SAPP commands from Discord**: Run any SAPP command (e.g., `/sapp pl`, `/sapp map bloodgulch ctf`) and see
+  the output directly in Discord.
 - Multiple server support: one Discord bot can handle several Halo servers simultaneously, each on its own TCP port.
 - Per-server Discord channels: each game server can send its events to different Discord channels.
 - Configurable embeds: custom titles, colors, descriptions, and per-subtype death/score messages.
 - TCP communication with automatic reconnection from the Lua script.
-- Slash command: `/game_status` shows bot health and per-server event statistics.
+- Slash commands:
+    - `/game_status` - shows bot health and per-server event statistics.
+    - `/sapp` - execute SAPP commands on any connected server.
 
 ---
 
@@ -181,6 +186,7 @@ Example:
 ```yaml
 COMMAND_PERMISSIONS:
   game_status: "ADMINISTRATOR"
+  sapp: "ADMINISTRATOR"
 ```
 
 ### `GAME_EVENTS.embeds`
@@ -295,6 +301,8 @@ Shows an ephemeral summary (only visible to you) for each configured game server
 - Uptime - how long that server's connection processor has been running
 
 Requires `ADMINISTRATOR` permission by default (configurable in `COMMAND_PERMISSIONS`).
+
+---
 
 ## License
 
