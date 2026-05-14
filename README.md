@@ -353,13 +353,6 @@ Executes any SAPP command directly on a connected Halo server and returns the ou
 \* When only one server is defined in `HALO_SERVERS`, the `server` option is omitted and the command is sent to that
 single server automatically.
 
-#### How it works
-
-1. Discord sends the command to the bot.
-2. The bot forwards it to the game server over the existing TCP connection.
-3. The Lua script on the game server runs the command through SAPP and captures all output lines.
-4. Output is sent back to the bot, which formats it into a code block and posts the embed in Discord.
-
 > **Note:** The command uses a timeout of 5 seconds. If SAPP produces a lot of output, the bot will wait up to 300ms
 > between lines to capture everything before finalising the response.
 
