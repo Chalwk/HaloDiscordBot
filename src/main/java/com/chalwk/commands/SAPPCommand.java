@@ -2,7 +2,6 @@
 
 package com.chalwk.commands;
 
-import com.chalwk.Config;
 import com.chalwk.tcp.GameEventProcessor;
 import com.chalwk.utils.BaseCommand;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -14,6 +13,7 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 import java.awt.*;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 public class SAPPCommand extends BaseCommand {
@@ -33,11 +33,9 @@ public class SAPPCommand extends BaseCommand {
             for (GameEventProcessor p : processors) {
                 serverOption.addChoice(p.getServerName(), p.getServerName());
             }
-            return Commands.slash("sapp", "Execute a SAPP command on the game server")
-                    .addOptions(commandOption, serverOption);
+            return Commands.slash("sapp", "Execute a SAPP command on the game server").addOptions(commandOption, serverOption);
         } else {
-            return Commands.slash("sapp", "Execute a SAPP command on the game server")
-                    .addOptions(commandOption);
+            return Commands.slash("sapp", "Execute a SAPP command on the game server").addOptions(commandOption);
         }
     }
 
@@ -48,13 +46,13 @@ public class SAPPCommand extends BaseCommand {
 
     @Override
     protected void executeCommand(SlashCommandInteractionEvent event) {
-        String command = event.getOption("command").getAsString();
+        String command = Objects.requireNonNull(event.getOption("command")).getAsString();
         GameEventProcessor targetProcessor;
 
         if (processors.size() == 1) {
             targetProcessor = processors.get(0);
         } else {
-            String serverName = event.getOption("server").getAsString();
+            String serverName = Objects.requireNonNull(event.getOption("server")).getAsString();
             targetProcessor = processors.stream()
                     .filter(p -> p.getServerName().equals(serverName))
                     .findFirst()
