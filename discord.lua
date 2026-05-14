@@ -245,9 +245,7 @@ local function process_buffer()
             local msg = line:sub(say_pos + 8)
             say_all(msg)
             cprint("[HaloDiscordBot] Received from Discord: " .. msg)
-        -- Handle command execution
         elseif line:find("^exec ") then
-            -- Format: exec <reqId> <playerIndex> <echo> <command>
             local cmd = line:sub(6)
             local parts = {}
             for part in cmd:gmatch("%S+") do table_insert(parts, part) end

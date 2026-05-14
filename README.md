@@ -3,6 +3,38 @@
 A Java application using [JDA](https://github.com/discord-jda/JDA) that connects multiple Halo servers to Discord,
 forwarding in-game events as rich Discord embeds. Supports SAPP and Phasor.
 
+## Table of Contents
+
+* [Features](#features)
+* [Requirements](#requirements)
+* [Download](#download)
+* [Installation](#installation)
+
+    * [1. Place Files](#1-place-files-on-the-same-machine-as-the-game-servers)
+    * [2. Discord Bot Token](#2-discord-bot-token)
+    * [3. Discord Intents & Bot Invite](#3-discord-intents--bot-invite)
+    * [4. Running the Bot](#4-running-the-bot)
+* [Lua Script Configuration](#lua-script-configuration)
+* [Protocol Specification](#protocol-specification)
+* [Configuration File (`config.yml`)](#configuration-file-configyml)
+
+    * [`HALO_SERVERS`](#halo_servers)
+    * [`COMMAND_PERMISSIONS`](#command_permissions)
+    * [`GAME_EVENTS.embeds`](#game_eventsembeds)
+
+        * [Placeholders](#placeholders)
+        * [Example 1: Chat event](#example-1-chat-event)
+        * [Example 2: Death event with subtypes](#example-2-death-event-with-subtypes)
+        * [Example 3: Score event using fields](#example-3-score-event-using-fields)
+        * [Linking an event to a channel key](#linking-an-event-to-a-channel-key)
+* [Slash Commands](#slash-commands)
+
+    * [`/game_status`](#game_status)
+    * [`/sapp`](#sapp)
+* [License](#license)
+
+---
+
 ## Features
 
 - Real-time event notifications: chat, deaths, scores, joins, leaves, map starts/ends, admin logins, and more.
@@ -290,17 +322,75 @@ type to different Discord channels.
 
 ## Slash Commands
 
+The bot provides two slash commands for server management and monitoring. All commands support Discord's permission
+system, configurable via `COMMAND_PERMISSIONS` in `config.yml`.
+
 ### `/game_status`
 
 Shows an ephemeral summary (only visible to you) for each configured game server:
 
 - Server name and port
-- TCP client connected - whether a game server is currently connected
-- Events processed - total events received from that server since bot start
-- Last event - timestamp of the most recent event from that server
-- Uptime - how long that server's connection processor has been running
+- TCP client connected – whether a game server is currently connected
+- Events processed – total events received from that server since bot start
+- Last event – timestamp of the most recent event from that server
+- Uptime – how long that server’s connection processor has been running
 
-Requires `ADMINISTRATOR` permission by default (configurable in `COMMAND_PERMISSIONS`).
+Requires `ADMINISTRATOR` permission by default (configurable).
+
+---
+
+### `/sapp`
+
+Executes any SAPP command directly on a connected Halo server and returns the output as a Discord embed.
+
+#### Parameters
+
+| Parameter | Type   | Required | Description                                                                       |
+|-----------|--------|----------|-----------------------------------------------------------------------------------|
+| `command` | String | Yes      | The SAPP command to run (e.g., `pl`, `map bloodgulch ctf`, `sv_mapcount`).        |
+| `server`  | String | No*      | Which Halo server to target. *Only shown if you have multiple servers configured. |
+
+\* When only one server is defined in `HALO_SERVERS`, the `server` option is omitted and the command is sent to that
+single server automatically.
+
+#### How it works
+
+1. Discord sends the command to the bot.
+2. The bot forwards it to the game server over the existing TCP connection.
+3. The Lua script on the game server runs the command through SAPP and captures all output lines.
+4. Output is sent back to the bot, which formats it into a code block and posts the embed in Discord.
+
+> **Note:** The command uses a timeout of 5 seconds. If SAPP produces a lot of output, the bot will wait up to 300ms
+> between lines to capture everything before finalising the response.
+
+#### Examples
+
+**List all players on the server**
+
+```
+/sapp pl
+```
+
+**Change map and gametype**
+
+```
+/sapp map bloodgulch ctf
+```
+
+**Targeting a specific server (multi-server setups)**  
+When multiple servers are defined in `config.yml`, the `/sapp` command includes an extra `server` dropdown. For example:
+
+```
+/sapp server: "Main Server" command: sv_map_next
+```
+
+This runs `sv_map_next` only on the server named "Main Server".
+
+#### Command output behaviour
+
+- If the command produces **no output** (e.g., `map bloodgulch ctf`), the bot replies with a simple ✅ success message.
+- If output **exceeds 2000 characters**, it is truncated and `...` is appended to fit Discord's message limit.
+- Output is always wrapped in a ```` ``` ```` code block inside an embed for clean formatting.
 
 ---
 
