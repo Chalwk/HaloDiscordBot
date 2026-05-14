@@ -52,5 +52,8 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v1
         with:
-          files: release-package/*
+          files: |
+            release-package/HaloDiscordBot.jar
+            release-package/config.yml
+            release-package/discord.lua
           generate_release_notes: true
