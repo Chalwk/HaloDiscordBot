@@ -24,39 +24,37 @@ local reconnect_interval = 5 -- seconds between reconnection attempts
 local max_queue_size = 200   -- maximum message queue size
 -- CONFIG END --
 
-local tonumber = tonumber
-local tostring = tostring
-local pairs = pairs
-local table_insert = table.insert
-local table_remove = table.remove
-local concat = table.concat
 local char = string.char
+local concat = table.concat
+local ipairs, pairs = ipairs, pairs
 local os_time = os.time
+local pcall = pcall
+local table_insert, table_remove = table.insert, table.remove
+local tonumber, tostring = tonumber, tostring
+local string_byte, string_format = string.byte, string.format
+local type = type
 
-local get_var = get_var
-local player_present = player_present
-local player_alive = player_alive
-local read_byte = read_byte
-local read_dword = read_dword
-local lookup_tag = lookup_tag
 local get_dynamic_player = get_dynamic_player
+local get_var = get_var
+local lookup_tag = lookup_tag
+local player_present, player_alive = player_present, player_alive
+local read_byte, read_dword = read_byte, read_dword
 
-local players
-local server_name
-local map
-local mode
-local gametype
-local gametype_base
-local score_limit
+local distance_tag
+local falling_tag
 local ffa
 local first_blood
-local falling_tag
-local distance_tag
+local gametype
+local gametype_base
+local map
+local mode
+local players
+local score_limit
+local server_name
 
 local COMMAND_TYPE = { [0] = "RCON", [1] = "CONSOLE", [2] = "CHAT", [3] = "UNKNOWN" }
 local CHAT_TYPE = { [0] = "GLOBAL", [1] = "TEAM", [2] = "VEHICLE", [3] = "UNKNOWN" }
 local GAMETYPE_MAP = { ctf = 1, race = 2, slayer = 4 }
-
 local PIRATED_HASHES = {
     ['388e89e69b4cc08b3441f25959f74103'] = true,
     ['81f9c914b3402c2702a12dc1405247ee'] = true,
@@ -97,6 +95,12 @@ local is_connected = false
 local reconnect_timer_active = false
 local message_queue = {}
 local incoming_buffer = "" -- buffer for partial data
+
+local function string_tohex(s)
+    if type(s) ~= "string" then return tostring(s) end
+    if s == "" then return "" end
+    return (s:gsub('.', function(c) return string_format("%02X ", string_byte(c)) end))
+end
 
 local function load_socket()
     local ok, mod = pcall(require, "ljsocket")
@@ -232,11 +236,12 @@ local function process_buffer()
         local line = incoming_buffer:sub(1, nl_pos - 1)
         incoming_buffer = incoming_buffer:sub(nl_pos + 1)
 
-        -- Remove trailing carriage return if present
         line = line:gsub("\r$", "")
 
-        if line:match("^say_all ") then
-            local msg = line:sub(5) -- remove "say_all " prefix
+        -- Look for "say_all " anywhere in the line
+        local say_pos = line:find("say_all ")
+        if say_pos then
+            local msg = line:sub(say_pos + 8) -- skip "say_all "
             say_all(msg)
             cprint("[HaloDiscordBot] Received from Discord: " .. msg)
         elseif line ~= "" then
@@ -245,36 +250,48 @@ local function process_buffer()
     end
 end
 
--- Poll for incoming data (non‑blocking, chunked read)
+-- Poll for incoming data (non-blocking, chunked read)
 function OnPollIncoming()
     if not is_connected or not sock then return true end
 
-    -- Set non‑blocking temporarily
     local was_blocking = sock:set_blocking(false)
-
-    -- Read up to 4096 bytes (ljsocket's receive expects a number)
     local data, err, partial = sock:receive(4096)
-
     sock:set_blocking(was_blocking)
 
     if data then
-        incoming_buffer = incoming_buffer .. data
+        if type(data) == "string" then
+            --cprint("[HaloDiscordBot] RAW RX (hex): " .. string_tohex(data))
+            incoming_buffer = incoming_buffer .. data
+        else
+            --cprint("[HaloDiscordBot] Unexpected data type: " .. type(data) .. " = " .. tostring(data))
+        end
         process_buffer()
+
     elseif partial then
-        -- partial is a string that was read but no more data available yet
-        incoming_buffer = incoming_buffer .. partial
-        process_buffer()
+        -- Only treat as real data if it's a string (numbers are just error codes)
+        if type(partial) == "string" then
+            --cprint("[HaloDiscordBot] RAW PARTIAL (hex): " .. string_tohex(partial))
+            incoming_buffer = incoming_buffer .. partial
+            process_buffer()
+        else
+            -- This is likely EAGAIN/EWOULDBLOCK (e.g., 10035 on Windows)
+            -- Do nothing, no data to add
+            -- (Uncomment the next line for debugging once, but it will spam the SAPP console)
+            -- cprint("[HaloDiscordBot] Non-blocking read returned partial numeric: " .. tostring(partial))
+        end
+
     elseif err == "closed" then
         cprint("[HaloDiscordBot] Connection closed by remote host")
         disconnect()
         if auto_connect then schedule_reconnect() end
+
     elseif err ~= "timeout" and err ~= "tryagain" then
         cprint("[HaloDiscordBot] Read error: " .. tostring(err))
         disconnect()
         if auto_connect then schedule_reconnect() end
     end
 
-    return true -- keep timer running
+    return true
 end
 
 local function respond(id)
@@ -366,6 +383,7 @@ function OnStart(notifyFlag)
     gametype = get_var(0, "$gt")
     if gametype == 'n/a' then return end
     if not server_name then server_name = get_server_name() end
+
     players, first_blood = {}, true
     ffa = get_var(0, '$ffa') == '1'
     mode, map = get_var(0, "$mode"), get_var(0, "$map")
@@ -466,7 +484,7 @@ local function handle_discord_command(id, command)
     elseif sub_cmd == "status" then
         local status = is_connected and "connected" or "disconnected"
         local auto_str = auto_connect and "ON" or "OFF"
-        tell(string.format("[HaloDiscordBot] Status: %s | Auto-connect: %s | %s:%d",
+        tell(string_format("[HaloDiscordBot] Status: %s | Auto-connect: %s | %s:%d",
             status, auto_str, host, port))
         return false
     elseif sub_cmd == "reconnect" then
@@ -557,10 +575,13 @@ function OnDeath(victim, killer)
 end
 
 function OnScriptLoad()
+
+    -- Load socket library
     if not load_socket() then
         cprint("[HaloDiscordBot] FATAL: LuaJitSocket missing, cannot send events")
         return
     end
+
     gametype_base = read_dword(sig_scan("B9360000008BF3BF78545F00") + 0x8)
 
     register_callback(cb['EVENT_CHAT'], 'OnChat')
@@ -578,11 +599,13 @@ function OnScriptLoad()
     register_callback(cb['EVENT_SPAWN'], 'OnSpawn')
     register_callback(cb['EVENT_TEAM_SWITCH'], 'OnSwitch')
 
+    -- Connect to Discord bot
     if auto_connect then
         connect_to_bot(host, port)
         if not is_connected then schedule_reconnect() end
     end
-    OnStart(1)
+
+    OnStart(1) -- in case script is loaded mid-game
 end
 
 function OnScriptUnload() disconnect() end
