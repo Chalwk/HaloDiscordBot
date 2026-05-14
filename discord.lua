@@ -26,12 +26,12 @@ local max_queue_size = 200   -- maximum message queue size
 
 local char = string.char
 local concat = table.concat
-local ipairs, pairs = ipairs, pairs
+local pairs, ipairs = pairs, ipairs
 local os_time = os.time
 local pcall = pcall
 local table_insert, table_remove = table.insert, table.remove
 local tonumber, tostring = tonumber, tostring
-local string_byte, string_format = string.byte, string.format
+local string_format = string.format
 local type = type
 
 local get_dynamic_player = get_dynamic_player
@@ -95,12 +95,6 @@ local is_connected = false
 local reconnect_timer_active = false
 local message_queue = {}
 local incoming_buffer = "" -- buffer for partial data
-
-local function string_tohex(s)
-    if type(s) ~= "string" then return tostring(s) end
-    if s == "" then return "" end
-    return (s:gsub('.', function(c) return string_format("%02X ", string_byte(c)) end))
-end
 
 local function load_socket()
     local ok, mod = pcall(require, "ljsocket")
@@ -187,7 +181,14 @@ function connect_to_bot(target_host, target_port)
             end
             count = count + 1
         end
-        for _ = 1, count do table_remove(message_queue, 1) end
+
+        -- Efficient in-place removal of sent messages
+        if count > 0 then
+            local q = message_queue
+            local len = #q
+            for i = 1, len - count do q[i] = q[i + count] end
+            for i = len - count + 1, len do q[i] = nil end
+        end
     end
     return true
 end
@@ -260,23 +261,13 @@ function OnPollIncoming()
 
     if data then
         if type(data) == "string" then
-            --cprint("[HaloDiscordBot] RAW RX (hex): " .. string_tohex(data))
             incoming_buffer = incoming_buffer .. data
-        else
-            --cprint("[HaloDiscordBot] Unexpected data type: " .. type(data) .. " = " .. tostring(data))
         end
         process_buffer()
     elseif partial then
-        -- Only treat as real data if it's a string (numbers are just error codes)
         if type(partial) == "string" then
-            --cprint("[HaloDiscordBot] RAW PARTIAL (hex): " .. string_tohex(partial))
             incoming_buffer = incoming_buffer .. partial
             process_buffer()
-        else
-            -- This is likely EAGAIN/EWOULDBLOCK (e.g., 10035 on Windows)
-            -- Do nothing, no data to add
-            -- (Uncomment the next line for debugging once, but it will spam the SAPP console)
-            -- cprint("[HaloDiscordBot] Non-blocking read returned partial numeric: " .. tostring(partial))
         end
     elseif err == "closed" then
         cprint("[HaloDiscordBot] Connection closed by remote host")
