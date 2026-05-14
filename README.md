@@ -14,6 +14,7 @@ forwarding in-game events as rich Discord embeds. Supports SAPP and Phasor.
     * [3. Discord Intents & Bot Invite](#3-discord-intents--bot-invite)
     * [4. Running the Bot](#4-running-the-bot)
 * [Lua Script Configuration](#lua-script-configuration)
+    * [SAPP vs Phasor differences](#sapp-vs-phasor-differences)
 * [Protocol Specification](#protocol-specification)
 * [Configuration File (`config.yml`)](#configuration-file-configyml)
     * [`HALO_SERVERS`](#halo_servers)
@@ -35,14 +36,17 @@ forwarding in-game events as rich Discord embeds. Supports SAPP and Phasor.
 
 - Real-time event notifications: chat, deaths, scores, joins, leaves, map starts/ends, admin logins, and more.
 - **Bidirectional chat**: Send messages from Discord to in-game chat (channel-to-server mapping).
-- **Execute server commands from Discord**: Run any command from SAPP or Phasor and see the output directly in Discord.
+- **Execute server commands from Discord**: Run any command from SAPP or Phasor and see the output directly in
+  Discord.  
+  *Note for Phasor users: Command output is not supported (no `/halo` command feedback).*
 - Multiple server support: one Discord bot can handle several Halo servers simultaneously, each on its own TCP port.
 - Per-server Discord channels: each game server can send its events to different Discord channels.
 - Configurable embeds: custom titles, colors, descriptions, and per-subtype death/score messages.
 - TCP communication with automatic reconnection from the Lua script.
 - Slash commands:
     - `/game_status` - shows bot health and per-server event statistics.
-    - `/halo` - execute a console command (SAPP or Phasor) on any connected server.
+    - `/halo` - execute a console command (SAPP or Phasor) on any connected server.  
+      For Phasor, the command runs but no output is returned.
 
 ---
 
@@ -146,8 +150,6 @@ The bot will:
 - Start TCP servers on all ports defined in `HALO_SERVERS` inside `config.yml`.
 - Load slash commands automatically.
 
-
-
 ---
 
 ## Lua Script Configuration
@@ -167,6 +169,17 @@ those ports in the bot's `HALO_SERVERS` list.
 
 The scripts automatically reconnect if the connection drops.
 
+### SAPP vs Phasor differences
+
+The Phasor version (`phasor_discord.lua`) has the following limitations compared to the SAPP version:
+
+- **No command output:** Phasor does not provide an `OnEcho` callback, so the bot cannot capture command results. The
+  `/halo` slash command will execute the command but return *"✅ Command executed (no output)"*.
+- **Missing events:** `event_login` (admin login), `event_snap` (bot detection), and `event_map_reset` are not triggered
+  by Phasor. These events will never appear in Discord.
+
+All other events (chat, death, join, leave, score, start, end, team switch, spawn, and command logs) work identically.
+
 ---
 
 ## Protocol Specification
@@ -183,6 +196,9 @@ Example:
 `event_chat|name=Player1|msg=Hello world|timestamp=1700000000`
 
 The bot parses these lines and builds Discord embeds according to `config.yml`.
+
+> **Note:** `event_echo` is sent only by SAPP (not Phasor). This event carries command output and is used by the `/halo`
+> command.
 
 ---
 
@@ -352,20 +368,22 @@ Requires `ADMINISTRATOR` permission by default (configurable).
 ### `/halo`
 
 Executes any server command directly on a connected Halo server (works with both SAPP and Phasor) and returns the output
-as a Discord embed.
+as a Discord embed.  
+**For Phasor servers, command output is not available** – the bot will only confirm execution without showing any
+output.
 
 #### Parameters
 
 | Parameter | Type   | Required | Description                                                                       |
 |-----------|--------|----------|-----------------------------------------------------------------------------------|
-| `command` | String | Yes      | The server command to run (e.g., `pl`, `map bloodgulch ctf`, `sv_kill`).      |
+| `command` | String | Yes      | The server command to run (e.g., `pl`, `map bloodgulch ctf`, `sv_kill`).          |
 | `server`  | String | No*      | Which Halo server to target. *Only shown if you have multiple servers configured. |
 
 \* When only one server is defined in `HALO_SERVERS`, the `server` option is omitted and the command is sent to that
 single server automatically.
 
-> **Note:** The command uses a timeout of 5 seconds. If the server produces a lot of output, the bot will wait up to
-> 300ms between lines to capture everything before finalising the response.
+> **Note:** The command uses a timeout of 5 seconds. For SAPP, if the server produces a lot of output, the bot will wait
+> up to 300ms between lines to capture everything. For Phasor, the command is sent without expecting any output.
 
 #### Examples
 
@@ -389,12 +407,6 @@ When multiple servers are defined in `config.yml`, the `/halo` command includes 
 ```
 
 This runs `sv_map_next` only on the server named "Main Server".
-
-#### Command output behaviour
-
-- If the command produces **no output** (e.g., `map bloodgulch ctf`), the bot replies with a simple ✅ success message.
-- If output **exceeds 2000 characters**, it is truncated and `...` is appended to fit Discord's message limit.
-- Output is always wrapped in a ```` ``` ```` code block inside an embed for clean formatting.
 
 ---
 

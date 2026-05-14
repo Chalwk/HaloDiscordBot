@@ -28,17 +28,14 @@ local pairs, ipairs = pairs, ipairs
 local os_time = os.time
 local pcall = pcall
 local table_insert, table_remove = table.insert, table.remove
-local tonumber, tostring = tonumber, tostring
+local tostring = tostring
 local type = type
 
 local readbyte = readbyte
-local readdword = readdword
 local readword = readword
 local getplayer = getplayer
 local getplayerobjectid = getplayerobjectid
-local getobject = getobject
 
-local current_request_id
 local ffa
 local first_blood
 local gametype
@@ -265,14 +262,9 @@ local function process_buffer()
                 table_insert(parts, part)
             end
             if #parts >= 4 then
-                local reqId = parts[1]
-                local playerIndex = tonumber(parts[2]) or 0
-                local echo = parts[3] == "1"
                 local command = concat(parts, " ", 4)
-                respond("[HaloDiscordBot] Executing command: " .. command)
-                current_request_id = reqId
-                execute_command(command, playerIndex, echo)
-                current_request_id = nil
+                respond("[HaloDiscordBot] Executing command (no output): " .. command)
+                svcmd(command)
             else
                 respond("[HaloDiscordBot] Invalid exec format: " .. line)
             end
@@ -370,13 +362,6 @@ local function get_team(id)
     return p and p.team or "unknown"
 end
 
-local function in_vehicle(id)
-    local obj_id = getplayerobjectid(id)
-    if not obj_id then return false end
-    local vehicle_id = readdword(getobject(obj_id) + 0x11C)
-    return vehicle_id ~= 0xFFFFFFFF
-end
-
 local function new_player(id)
     return { id = id, switched = false, ip = getip(id), name = getname(id), team = get_team(id), hash = gethash(id) }
 end
@@ -468,59 +453,6 @@ function OnTeamChange(id, _, new_team)
     end
 end
 
-function OnMapReset()
-    log_event("event_map_reset", { map = map, mode = mode, gt = gametype, ffa = ffa and "FFA" or "Team Play" })
-end
-
-function OnAdminLogin(id)
-    local player = players[id]
-    if player then
-        log_event("event_login", { name = player.name })
-    end
-end
-
-function OnAdminSnap(id)
-    local player = players[id]
-    if player then
-        log_event("event_snap", { name = player.name })
-    end
-end
-
-function OnEcho(playerIndex, message)
-    if current_request_id then
-        log_event("event_echo", { reqId = current_request_id, playerIndex = tostring(playerIndex), message = message })
-    else
-        log_event("event_echo", { playerIndex = tostring(playerIndex), message = message })
-    end
-end
-
-function OnServerCommand(id, command)
-    local player = players[id]
-    if not player then return true end
-    log_event("event_command", {
-        name = player.name,
-        id = tostring(id),
-        type = "RCON",
-        cmd = command
-    })
-    return true
-end
-
-function OnServerChat(id, type, msg)
-    local player = players[id]
-    if not player then return end
-    if not is_chat_command(msg) and msg:sub(1, 1) ~= "@" then
-        log_event("event_chat", { type = CHAT_TYPE[type], name = player.name, id = id, msg = msg })
-    elseif is_chat_command(msg) then
-        log_event("event_command", {
-            name = player.name,
-            id = tostring(id),
-            type = "CHAT",
-            cmd = msg
-        })
-    end
-end
-
 function OnPlayerScore(id)
     local player = players[id]
     if not player then return end
@@ -528,9 +460,8 @@ function OnPlayerScore(id)
     local event_type = GAMETYPE_MAP[gametype] or (gametype == "race" and (ffa and 3 or 2))
     if not event_type then return end
 
-    --
-    -- todo: implement score-getting
-    --
+    -- Note: Score retrieval is not implemented yet.
+    -- Values are placeholders.
     local red_score = 0
     local blue_score = 0
     local total_team_laps = player.team == "red" and red_score or blue_score
@@ -542,7 +473,7 @@ function OnPlayerScore(id)
         team = player.team or "FFA",
         red_score = red_score,
         blue_score = blue_score,
-        scorelimit = get_scorelimit() -- in case scorelimit changes mid-game
+        scorelimit = get_scorelimit()
     }, event_type
     )
 end
@@ -589,6 +520,33 @@ function OnPlayerKill(killer, victim, kill_mode)
         victim_name = victim_data.name
     }, event_type
     )
+end
+
+function OnServerCommand(id, command)
+    local player = players[id]
+    if not player then return true end
+    log_event("event_command", {
+        name = player.name,
+        id = tostring(id),
+        type = "RCON",
+        cmd = command
+    })
+    return true
+end
+
+function OnServerChat(id, chat_mode, msg)
+    local player = players[id]
+    if not player then return end
+    if not is_chat_command(msg) and msg:sub(1, 1) ~= "@" then
+        log_event("event_chat", { type = CHAT_TYPE[chat_mode], name = player.name, id = id, msg = msg })
+    elseif is_chat_command(msg) then
+        log_event("event_command", {
+            name = player.name,
+            id = tostring(id),
+            type = "CHAT",
+            cmd = msg
+        })
+    end
 end
 
 function OnScriptLoad(_, game, _)
