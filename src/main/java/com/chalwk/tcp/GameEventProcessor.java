@@ -26,6 +26,7 @@ public class GameEventProcessor {
     private final Config config;
     private final String serverName;
     private final int serverPort;
+    private final GameEventTcpServer tcpServer;
 
     // stats tracking - using atomic because multiple threads might access these
     private final AtomicLong totalEventsProcessed = new AtomicLong(0);
@@ -33,11 +34,19 @@ public class GameEventProcessor {
     private final Instant startTime = Instant.now();
     private volatile boolean hasConnectedClient = false;
 
-    public GameEventProcessor(JDA jda, Config config, String serverName, int serverPort) {
+    public GameEventProcessor(JDA jda, Config config, String serverName, int serverPort, GameEventTcpServer tcpServer) {
         this.jda = jda;
         this.config = config;
         this.serverName = serverName;
         this.serverPort = serverPort;
+        this.tcpServer = tcpServer;
+    }
+
+    public void sendChatToGame(String discordUser, String message) {
+        if (message == null || message.trim().isEmpty()) return;
+        String trimmed = message.length() > 200 ? message.substring(0, 200) : message;
+        String command = "say [Discord] " + discordUser + ": " + trimmed;
+        tcpServer.sendCommand(command);
     }
 
     // Takes a raw line from the TCP stream, parses and sends a Discord embed

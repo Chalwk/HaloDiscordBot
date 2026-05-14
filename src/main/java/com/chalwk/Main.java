@@ -3,6 +3,7 @@
 package com.chalwk;
 
 import com.chalwk.commands.GameStatus;
+import com.chalwk.listeners.ChatForwardListener;
 import com.chalwk.listeners.SlashCommandListener;
 import com.chalwk.tcp.GameEventProcessor;
 import com.chalwk.tcp.GameEventTcpServer;
@@ -48,7 +49,10 @@ public class Main {
         cmdManager.register(new GameStatus(allProcessors));
         cmdManager.loadPermissionsFromConfig("config.yml");
 
+        // Register listeners: slash commands and chat forwarding
         jda.addEventListener(new SlashCommandListener(cmdManager));
+        jda.addEventListener(new ChatForwardListener(config, allProcessors));
+
         jda.updateCommands().addCommands(cmdManager.getCommandDataList()).queue();
 
         LoggerUtil.info("\nHaloDiscordBot online. Listening on {} port(s).", servers.size());

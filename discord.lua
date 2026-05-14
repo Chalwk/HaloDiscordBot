@@ -1,32 +1,40 @@
 --[[
 =====================================================================================
 SCRIPT NAME:      discord.lua
-DESCRIPTION:      Halo server events forwarder using LuaJitSocket TCP
+DESCRIPTION:      Logs Halo server events using LuaJitSocket TCP.
+
+                  PREREQUISITES:
+                  1. HaloDiscordBot needs to be installed and running.
+                     https://github.com/Chalwk/HaloDiscordBot
+
+                  2. LuaJIT with a TCP library supporting Lua 5.1 (e.g.
+                     CapsAdmin/luajitsocket or any compatible alternative)
+                     https://github.com/CapsAdmin/luajitsocket
 
 Copyright (c) 2026 Jericho Crosby (Chalwk)
-LICENSE:          MIT License
-                  https://github.com/Chalwk/SPCLib/blob/master/LICENSE
 =====================================================================================
 ]]
 
 -- CONFIG START --
 api_version = '1.12.0.0'
 
-local host = "127.0.0.1"            -- default bot address
-local port = 47652                  -- default bot port
-local auto_connect = true           -- automatically connect on script load
-local reconnect_interval = 5        -- seconds between reconnection attempts
-local max_queue_size = 200          -- maximum message queue size
+local host = "127.0.0.1"     -- default bot address
+local port = 47652           -- default bot port
+local auto_connect = true    -- automatically connect on script load
+local reconnect_interval = 5 -- seconds between reconnection attempts
+local max_queue_size = 200   -- maximum message queue size
 -- CONFIG END --
 
 local tonumber = tonumber
 local tostring = tostring
 local pairs = pairs
 local table_insert = table.insert
+local table_remove = table.remove
 local concat = table.concat
 local char = string.char
 local os_time = os.time
 
+local say = say
 local get_var = get_var
 local player_present = player_present
 local player_alive = player_alive
@@ -106,6 +114,7 @@ local sock = nil
 local is_connected = false
 local reconnect_timer_active = false
 local message_queue = {}
+local incoming_buffer = "" -- buffer for partial lines
 
 local function load_socket()
     local ok, mod = pcall(require, "ljsocket")
@@ -124,19 +133,18 @@ local function schedule_reconnect()
 end
 
 function OnReconnect()
-    -- Stop if already connected or auto-connect was turned off
     if is_connected or not auto_connect then
         reconnect_timer_active = false
-        return false -- kill timer
+        return false
     end
 
     cprint("[HaloDiscordBot] Attempting reconnection...")
     connect_to_bot(host, port)
 
-    if not is_connected then return true end -- keep retrying
+    if not is_connected then return true end
 
     reconnect_timer_active = false
-    return false -- connected, stop the timer
+    return false
 end
 
 function connect_to_bot(target_host, target_port)
@@ -155,10 +163,8 @@ function connect_to_bot(target_host, target_port)
         return false
     end
 
-    -- Set non-blocking so we can time out the connection
     s:set_blocking(false)
 
-    -- Connect (returns true on in-progress when non-blocking)
     local res, err, num = s:connect(target_host, tostring(target_port))
     if not res then
         s:close()
@@ -167,8 +173,7 @@ function connect_to_bot(target_host, target_port)
     end
 
     if res == true then
-        -- Connection is in progress, poll for "out" (writeable) to know when it's done
-        local poll_result, poll_err = s:poll(5000, "out") -- 5-second timeout
+        local poll_result, poll_err = s:poll(5000, "out")
         if not poll_result or not poll_result.out then
             s:close()
             cprint("[HaloDiscordBot] Connection to " .. target_host .. ":" .. target_port .. " timed out")
@@ -176,15 +181,16 @@ function connect_to_bot(target_host, target_port)
         end
     end
 
-    -- Connection established - switch back to blocking and set send timeout
     s:set_blocking(true)
-    s:set_option("sndtimeo", 1000) -- 1 second send timeout (ms)
+    s:set_option("sndtimeo", 1000)
 
     sock = s
     is_connected = true
     cprint("[HaloDiscordBot] Connected to " .. target_host .. ":" .. target_port)
 
-    -- Flush queued messages
+    -- Start polling for incoming data (every second)
+    timer(1000, "OnPollIncoming")
+
     if #message_queue > 0 then
         local count = 0
         for _, msg in ipairs(message_queue) do
@@ -195,7 +201,7 @@ function connect_to_bot(target_host, target_port)
             end
             count = count + 1
         end
-        for _ = 1, count do table.remove(message_queue, 1) end
+        for _ = 1, count do table_remove(message_queue, 1) end
     end
     return true
 end
@@ -214,7 +220,7 @@ local function send_data(data)
     if not is_connected then
         table_insert(message_queue, data)
         if #message_queue > max_queue_size then
-            table.remove(message_queue, 1)
+            table_remove(message_queue, 1)
         end
         if auto_connect then schedule_reconnect() end
         return false
@@ -223,19 +229,64 @@ local function send_data(data)
     local bytes, err = sock:send(data)
     if not bytes then
         cprint("[HaloDiscordBot] Send error: " .. tostring(err))
-        -- Assume the connection is dead
         is_connected = false
         pcall(sock.close, sock)
         sock = nil
-        -- Re-queue the message that failed
         table_insert(message_queue, data)
         if #message_queue > max_queue_size then
-            table.remove(message_queue, 1)
+            table_remove(message_queue, 1)
         end
         if auto_connect then schedule_reconnect() end
         return false
     end
     return true
+end
+
+-- Poll for incoming data (non‑blocking)
+function OnPollIncoming()
+    if not is_connected or not sock then return true end
+
+    -- Set non‑blocking temporarily to read without hanging
+    local was_blocking = sock:set_blocking(false)
+    local data, err, partial = sock:receive("*l") -- read line
+    sock:set_blocking(was_blocking)
+
+    if data then
+        -- Process complete line
+        data = data:gsub("\r", "")
+        if data:match("^say ") then
+            local msg = data:sub(5) -- remove "say " prefix
+            say(msg)
+            cprint("[HaloDiscordBot] Received from Discord: " .. msg)
+        else
+            cprint("[HaloDiscordBot] Unknown command: " .. data)
+        end
+        -- There might be more data, the timer will pick it up next second
+    elseif partial then
+        -- Partial line received (without newline). Buffer it.
+        incoming_buffer = incoming_buffer .. partial
+        -- Check if the buffer now contains a full line (rare)
+        local nl_pos = incoming_buffer:find("\n")
+        if nl_pos then
+            local full = incoming_buffer:sub(1, nl_pos - 1)
+            incoming_buffer = incoming_buffer:sub(nl_pos + 1)
+            if full:match("^say ") then
+                say(full:sub(5))
+                cprint("[HaloDiscordBot] Received from Discord (buffered): " .. full:sub(5))
+            end
+        end
+    elseif err == "closed" then
+        cprint("[HaloDiscordBot] Connection closed by remote host")
+        disconnect()
+        if auto_connect then schedule_reconnect() end
+    elseif err ~= "timeout" then
+        -- Other error
+        cprint("[HaloDiscordBot] Read error: " .. tostring(err))
+        disconnect()
+        if auto_connect then schedule_reconnect() end
+    end
+
+    return true -- keep timer running
 end
 
 local function respond(id)
@@ -447,8 +498,11 @@ function OnCommand(id, command, env)
     if not player then return true end
     if command:lower():match("^discord%s") then return handle_discord_command(id, command) end
     log_event("event_command", {
-        lvl = player.level(), name = player.name, id = tostring(id),
-        type = COMMAND_TYPE[env], cmd = command
+        lvl = player.level(),
+        name = player.name,
+        id = tostring(id),
+        type = COMMAND_TYPE[env],
+        cmd = command
     })
     return true
 end
@@ -456,7 +510,7 @@ end
 function OnChat(id, msg, env)
     local player = players[id]
     if not player then return end
-    if not is_chat_command(msg) and msg:sub(1,1) ~= "@" then
+    if not is_chat_command(msg) and msg:sub(1, 1) ~= "@" then
         log_event("event_chat", { type = CHAT_TYPE[env], name = player.name, id = id, msg = msg })
     end
 end
@@ -468,8 +522,11 @@ function OnScore(id)
     if not event_type then return end
     log_event("event_score", {
         total_team_laps = player.team == "red" and get_var(0, "$redscore") or get_var(0, "$bluescore"),
-        score = get_var(id, "$score"), name = player.name, team = player.team or "FFA",
-        red_score = get_var(0, "$redscore"), blue_score = get_var(0, "$bluescore"),
+        score = get_var(id, "$score"),
+        name = player.name,
+        team = player.team or "FFA",
+        red_score = get_var(0, "$redscore"),
+        blue_score = get_var(0, "$bluescore"),
         scorelimit = score_limit
     }, event_type)
 end
@@ -527,4 +584,6 @@ function OnScriptLoad()
     OnStart(1)
 end
 
-function OnScriptUnload() disconnect() end
+function OnScriptUnload()
+    disconnect()
+end

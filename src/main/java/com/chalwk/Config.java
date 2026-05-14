@@ -158,6 +158,17 @@ public class Config {
         return null;
     }
 
+    public List<HaloServerConfig> getServersForDiscordChannel(String channelId) {
+        if (channelId == null) return List.of();
+        List<HaloServerConfig> result = new ArrayList<>();
+        for (HaloServerConfig server : serverConfigs.values()) {
+            if (server.perServerChannels().containsValue(channelId)) {
+                result.add(server);
+            }
+        }
+        return result;
+    }
+
     public List<HaloServerConfig> getHaloServers() {
         return new ArrayList<>(serverConfigs.values());
     }
