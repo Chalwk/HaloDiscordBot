@@ -41,8 +41,61 @@ jobs:
           cp config.yml release-package/
           cp sapp_discord.lua release-package/
           cp phasor_discord.lua release-package/
-          cp run.bat release-package/
-          # Create the zip archive
+
+      - name: Create run.bat
+        run: |
+          cat > release-package/run.bat << 'EOF'
+          @echo off
+          title HaloDiscordBot Launcher
+
+          cd /d "%~dp0"
+
+          set JAR=HaloDiscordBot.jar
+
+          if not exist "%JAR%" (
+              echo ERROR: Jar not found at %JAR%
+              echo Make sure HaloDiscordBot.jar is in the same directory as run.bat
+              pause
+              exit /b 1
+          )
+
+          java -jar "%JAR%"
+
+          echo.
+          echo Bot stopped or crashed.
+          pause
+          EOF
+
+      - name: Create run.sh
+        run: |
+          cat > release-package/run.sh << 'EOF'
+          #!/usr/bin/env bash
+
+          clear
+          echo "HaloDiscordBot Launcher"
+
+          SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+          cd "$SCRIPT_DIR" || exit 1
+
+          JAR="HaloDiscordBot.jar"
+
+          if [[ ! -f "$JAR" ]]; then
+              echo "ERROR: Jar not found at $JAR"
+              echo "Make sure HaloDiscordBot.jar is in the same directory as run.sh"
+              read -rp "Press Enter to continue..."
+              exit 1
+          fi
+
+          java -jar "$JAR"
+
+          echo
+          echo "Bot stopped or crashed."
+          read -rp "Press Enter to continue..."
+          EOF
+          chmod +x release-package/run.sh
+
+      - name: Create zip archive
+        run: |
           cd release-package
           zip -r ../HaloDiscordBot.zip .
           cd ..

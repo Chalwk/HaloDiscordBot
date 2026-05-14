@@ -7,7 +7,7 @@ set JAR=build\libs\HaloDiscordBot.jar
 
 if not exist "%JAR%" (
     echo ERROR: Jar not found at %JAR%
-    echo Make sure you've built the project first.
+    echo Make sure HaloDiscordBot.jar is in the same directory as run.bat
     pause
     exit /b 1
 )

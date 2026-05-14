@@ -26,7 +26,7 @@ forwarding in-game events as rich Discord embeds. Supports SAPP and Phasor.
         * [Linking an event to a channel key](#linking-an-event-to-a-channel-key)
 * [Slash Commands](#slash-commands)
     * [`/game_status`](#game_status)
-    * [`/sapp`](#sapp)
+    * [`/halo`](#halo)
 * [License](#license)
 
 ---
@@ -35,15 +35,14 @@ forwarding in-game events as rich Discord embeds. Supports SAPP and Phasor.
 
 - Real-time event notifications: chat, deaths, scores, joins, leaves, map starts/ends, admin logins, and more.
 - **Bidirectional chat**: Send messages from Discord to in-game chat (channel-to-server mapping).
-- **Execute SAPP or Phasor commands from Discord**: Run any SAPP command (e.g., `/sapp pl`, `/sapp map bloodgulch ctf`) and see
-  the output directly in Discord.
+- **Execute server commands from Discord**: Run any command from SAPP or Phasor and see the output directly in Discord.
 - Multiple server support: one Discord bot can handle several Halo servers simultaneously, each on its own TCP port.
 - Per-server Discord channels: each game server can send its events to different Discord channels.
 - Configurable embeds: custom titles, colors, descriptions, and per-subtype death/score messages.
 - TCP communication with automatic reconnection from the Lua script.
 - Slash commands:
     - `/game_status` - shows bot health and per-server event statistics.
-    - `/sapp` / `/phasor` - execute SAPP or Phasor commands on any connected server.
+    - `/halo` - execute a console command (SAPP or Phasor) on any connected server.
 
 ---
 
@@ -62,6 +61,8 @@ The latest stable version is packaged as a zip file containing:
 
 - `HaloDiscordBot.jar` - the main bot application
 - `config.yml` - configuration file (edit before running)
+- `run.bat` - Windows launcher script (optional)
+- `run.sh` - Linux/macOS launcher script (optional)
 - `sapp_discord.lua` - Lua script for SAPP servers
 - `phasor_discord.lua` - Lua script for Phasor V2 servers
 
@@ -72,14 +73,16 @@ The latest stable version is packaged as a zip file containing:
 1. Click the badge above to go to the Releases page.
 2. Look for the latest release (e.g., `v1.0.0`).
 3. Under Assets, click `HaloDiscordBot.zip` to download.
-4. Extract the zip - you will get all four files.
+4. Extract the zip - you will get all six files.
 
 ---
 
+## Installation
+
 ### 1. Place Files (on the same machine as the game servers)
 
-From the downloaded zip, copy the following files to your Halo server's root directory (where `sapp.dll` or `PhasorPC/CE.dll`
-resides):
+From the downloaded zip, copy the following files to your Halo server's root directory (where `sapp.dll` or
+`PhasorPC/CE.dll` resides):
 
 - `HaloDiscordBot.jar`
 - `config.yml`
@@ -103,7 +106,7 @@ configured in both the Lua script and `config.yml`).
 
 - **Windows:** Press Windows key, type `environment`, select *Edit the system environment variables* → *Environment
   Variables* → *New*. Name: `HALO_DISCORD_BOT_TOKEN`, Value: `your-token-here`.
-- **Linux:** Add to `~/.bashrc`:  
+- **Linux/macOS:** Add to `~/.bashrc` (or `~/.zshrc`):  
   `export HALO_DISCORD_BOT_TOKEN="your-token-here"`  
   then run `source ~/.bashrc`.
 
@@ -125,13 +128,25 @@ From the server root directory (where `config.yml` is located):
 java -jar HaloDiscordBot.jar
 ```
 
+**Alternatively, you can use the provided launcher scripts:**
+
+- **Windows:** double-click `run.bat` (provided in the zip). The batch file simplifies the process and keeps the
+  terminal window open after the bot stops.
+- **Linux/macOS:** open a terminal, make the script executable, then run it:
+  ```bash
+  chmod +x run.sh
+  ./run.sh
+  ```
+  The `run.sh` script (included in the zip) does the same: launches the bot and keeps the terminal open after the bot
+  stops (using `read` on Linux/macOS).
+
 The bot will:
 
 - Connect to Discord.
 - Start TCP servers on all ports defined in `HALO_SERVERS` inside `config.yml`.
 - Load slash commands automatically.
 
-Leave the terminal open. The bot must be running before each game server loads `sapp_discord.lua`.
+
 
 ---
 
@@ -145,7 +160,7 @@ local port = 47652           -- bot port, must match a port in config.yml
 local auto_connect = true    -- automatically connect on script load
 local reconnect_interval = 5 -- seconds between reconnection attempts
 local max_queue_size = 200   -- maximum message queue size
-````
+```
 
 If you run multiple Halo servers, give each server's Lua script a different port (e.g., 47652, 47653, ...) and define
 those ports in the bot's `HALO_SERVERS` list.
@@ -213,7 +228,7 @@ Example:
 ```yaml
 COMMAND_PERMISSIONS:
   game_status: "ADMINISTRATOR"
-  sapp: "ADMINISTRATOR"
+  halo: "ADMINISTRATOR"
 ```
 
 ### `GAME_EVENTS.embeds`
@@ -334,42 +349,43 @@ Requires `ADMINISTRATOR` permission by default (configurable).
 
 ---
 
-### `/sapp`
+### `/halo`
 
-Executes any SAPP command directly on a connected Halo server and returns the output as a Discord embed.
+Executes any server command directly on a connected Halo server (works with both SAPP and Phasor) and returns the output
+as a Discord embed.
 
 #### Parameters
 
 | Parameter | Type   | Required | Description                                                                       |
 |-----------|--------|----------|-----------------------------------------------------------------------------------|
-| `command` | String | Yes      | The SAPP command to run (e.g., `pl`, `map bloodgulch ctf`, `sv_mapcount`).        |
+| `command` | String | Yes      | The server command to run (e.g., `pl`, `map bloodgulch ctf`, `sv_kill`).      |
 | `server`  | String | No*      | Which Halo server to target. *Only shown if you have multiple servers configured. |
 
 \* When only one server is defined in `HALO_SERVERS`, the `server` option is omitted and the command is sent to that
 single server automatically.
 
-> **Note:** The command uses a timeout of 5 seconds. If SAPP produces a lot of output, the bot will wait up to 300ms
-> between lines to capture everything before finalising the response.
+> **Note:** The command uses a timeout of 5 seconds. If the server produces a lot of output, the bot will wait up to
+> 300ms between lines to capture everything before finalising the response.
 
 #### Examples
 
 **List all players on the server**
 
 ```
-/sapp pl
+/halo pl
 ```
 
 **Change map and gametype**
 
 ```
-/sapp map bloodgulch ctf
+/halo map bloodgulch ctf
 ```
 
 **Targeting a specific server (multi-server setups)**  
-When multiple servers are defined in `config.yml`, the `/sapp` command includes an extra `server` dropdown. For example:
+When multiple servers are defined in `config.yml`, the `/halo` command includes an extra `server` dropdown. For example:
 
 ```
-/sapp server: "Main Server" command: sv_map_next
+/halo server: "Main Server" command: sv_map_next
 ```
 
 This runs `sv_map_next` only on the server named "Main Server".

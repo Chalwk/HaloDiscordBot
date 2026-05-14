@@ -16,32 +16,32 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-public class SAPPCommand extends BaseCommand {
+public class HaloCommand extends BaseCommand {
 
     private final List<GameEventProcessor> processors;
 
-    public SAPPCommand(List<GameEventProcessor> processors) {
+    public HaloCommand(List<GameEventProcessor> processors) {
         this.processors = processors;
     }
 
     @Override
     public CommandData getCommandData() {
-        OptionData commandOption = new OptionData(OptionType.STRING, "command", "SAPP command to execute (e.g., 'pl', 'map bloodgulch ctf')", true);
+        OptionData commandOption = new OptionData(OptionType.STRING, "command", "Server command to execute (e.g., 'pl', 'map bloodgulch ctf')", true);
 
         if (processors.size() > 1) {
             OptionData serverOption = new OptionData(OptionType.STRING, "server", "Which Halo server to target", true);
             for (GameEventProcessor p : processors) {
                 serverOption.addChoice(p.getServerName(), p.getServerName());
             }
-            return Commands.slash("sapp", "Execute a SAPP command on the game server").addOptions(commandOption, serverOption);
+            return Commands.slash("halo", "Execute a server command on the game server (SAPP or Phasor)").addOptions(commandOption, serverOption);
         } else {
-            return Commands.slash("sapp", "Execute a SAPP command on the game server").addOptions(commandOption);
+            return Commands.slash("halo", "Execute a server command on the game server (SAPP or Phasor)").addOptions(commandOption);
         }
     }
 
     @Override
     public String getDescription() {
-        return "Execute a SAPP command on the game server";
+        return "Execute a server command on the game server (SAPP or Phasor)";
     }
 
     @Override
@@ -63,19 +63,16 @@ public class SAPPCommand extends BaseCommand {
             }
         }
 
-        // Defer reply because command may take a moment
         event.deferReply().queue();
 
-        // Execute asynchronously with 5 second timeout
         targetProcessor.executeSappCommand(command, 5000, TimeUnit.MILLISECONDS)
                 .thenAccept(output -> {
                     if (output == null || output.trim().isEmpty()) {
                         event.getHook().sendMessage("✅ Command executed (no output)").queue();
                     } else {
-                        // Discord message limit is 2000 chars, split if needed
                         String finalOutput = output.length() > 2000 ? output.substring(0, 1997) + "..." : output;
                         EmbedBuilder embed = new EmbedBuilder()
-                                .setTitle("📟 SAPP Command: `" + command + "`")
+                                .setTitle("📟 Server Command: `" + command + "`")
                                 .setDescription("```\n" + finalOutput + "\n```")
                                 .setColor(Color.CYAN);
                         event.getHook().sendMessageEmbeds(embed.build()).queue();
