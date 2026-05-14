@@ -7,8 +7,7 @@ DESCRIPTION:      Logs Halo server events using LuaJitSocket TCP.
                   1. HaloDiscordBot needs to be installed and running.
                      https://github.com/Chalwk/HaloDiscordBot
 
-                  2. LuaJIT with a TCP library supporting Lua 5.1 (e.g.
-                     CapsAdmin/luajitsocket or any compatible alternative)
+                  2. LuaJIT Socket supporting Lua 5.1
                      https://github.com/CapsAdmin/luajitsocket
 
 Copyright (c) 2026 Jericho Crosby (Chalwk)
@@ -34,7 +33,6 @@ local concat = table.concat
 local char = string.char
 local os_time = os.time
 
-local say = say
 local get_var = get_var
 local player_present = player_present
 local player_alive = player_alive
@@ -114,7 +112,7 @@ local sock = nil
 local is_connected = false
 local reconnect_timer_active = false
 local message_queue = {}
-local incoming_buffer = "" -- buffer for partial lines
+local incoming_buffer = "" -- buffer for partial data
 
 local function load_socket()
     local ok, mod = pcall(require, "ljsocket")
@@ -242,45 +240,51 @@ local function send_data(data)
     return true
 end
 
--- Poll for incoming data (non‑blocking)
+-- Process complete lines from the incoming buffer
+local function process_buffer()
+    while true do
+        local nl_pos = incoming_buffer:find("\n")
+        if not nl_pos then break end
+        local line = incoming_buffer:sub(1, nl_pos - 1)
+        incoming_buffer = incoming_buffer:sub(nl_pos + 1)
+
+        -- Remove trailing carriage return if present
+        line = line:gsub("\r$", "")
+
+        if line:match("^say_all ") then
+            local msg = line:sub(5) -- remove "say_all " prefix
+            say_all(msg)
+            cprint("[HaloDiscordBot] Received from Discord: " .. msg)
+        elseif line ~= "" then
+            cprint("[HaloDiscordBot] Unknown command: " .. line)
+        end
+    end
+end
+
+-- Poll for incoming data (non‑blocking, chunked read)
 function OnPollIncoming()
     if not is_connected or not sock then return true end
 
-    -- Set non‑blocking temporarily to read without hanging
+    -- Set non‑blocking temporarily
     local was_blocking = sock:set_blocking(false)
-    local data, err, partial = sock:receive("*l") -- read line
+
+    -- Read up to 4096 bytes (ljsocket's receive expects a number)
+    local data, err, partial = sock:receive(4096)
+
     sock:set_blocking(was_blocking)
 
     if data then
-        -- Process complete line
-        data = data:gsub("\r", "")
-        if data:match("^say ") then
-            local msg = data:sub(5) -- remove "say " prefix
-            say(msg)
-            cprint("[HaloDiscordBot] Received from Discord: " .. msg)
-        else
-            cprint("[HaloDiscordBot] Unknown command: " .. data)
-        end
-        -- There might be more data, the timer will pick it up next second
+        incoming_buffer = incoming_buffer .. data
+        process_buffer()
     elseif partial then
-        -- Partial line received (without newline). Buffer it.
+        -- partial is a string that was read but no more data available yet
         incoming_buffer = incoming_buffer .. partial
-        -- Check if the buffer now contains a full line (rare)
-        local nl_pos = incoming_buffer:find("\n")
-        if nl_pos then
-            local full = incoming_buffer:sub(1, nl_pos - 1)
-            incoming_buffer = incoming_buffer:sub(nl_pos + 1)
-            if full:match("^say ") then
-                say(full:sub(5))
-                cprint("[HaloDiscordBot] Received from Discord (buffered): " .. full:sub(5))
-            end
-        end
+        process_buffer()
     elseif err == "closed" then
         cprint("[HaloDiscordBot] Connection closed by remote host")
         disconnect()
         if auto_connect then schedule_reconnect() end
-    elseif err ~= "timeout" then
-        -- Other error
+    elseif err ~= "timeout" and err ~= "tryagain" then
         cprint("[HaloDiscordBot] Read error: " .. tostring(err))
         disconnect()
         if auto_connect then schedule_reconnect() end

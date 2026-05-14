@@ -45,7 +45,7 @@ public class GameEventProcessor {
     public void sendChatToGame(String discordUser, String message) {
         if (message == null || message.trim().isEmpty()) return;
         String trimmed = message.length() > 200 ? message.substring(0, 200) : message;
-        String command = "say [Discord] " + discordUser + ": " + trimmed;
+        String command = "say_all [Discord] " + discordUser + ": " + trimmed;
         tcpServer.sendCommand(command);
     }
 
