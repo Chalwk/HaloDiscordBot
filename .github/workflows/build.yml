@@ -40,20 +40,21 @@ jobs:
           cp build/libs/HaloDiscordBot.jar release-package/
           cp config.yml release-package/
           cp discord.lua release-package/
+          # Create the zip archive
+          cd release-package
+          zip -r ../HaloDiscordBot.zip .
+          cd ..
 
       - name: Upload release package as artifact
         uses: actions/upload-artifact@v4
         with:
           name: HaloDiscordBot
-          path: release-package/
+          path: HaloDiscordBot.zip
           if-no-files-found: error
 
       - name: Create Release (if tag push)
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v1
         with:
-          files: |
-            release-package/HaloDiscordBot.jar
-            release-package/config.yml
-            release-package/discord.lua
+          files: HaloDiscordBot.zip
           generate_release_notes: true
