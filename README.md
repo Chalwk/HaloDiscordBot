@@ -9,7 +9,6 @@ forwarding in-game events as rich Discord embeds. Supports SAPP and Phasor.
 * [Requirements](#requirements)
 * [Download](#download)
 * [Installation](#installation)
-
     * [1. Place Files](#1-place-files-on-the-same-machine-as-the-game-servers)
     * [2. Discord Bot Token](#2-discord-bot-token)
     * [3. Discord Intents & Bot Invite](#3-discord-intents--bot-invite)
@@ -17,18 +16,15 @@ forwarding in-game events as rich Discord embeds. Supports SAPP and Phasor.
 * [Lua Script Configuration](#lua-script-configuration)
 * [Protocol Specification](#protocol-specification)
 * [Configuration File (`config.yml`)](#configuration-file-configyml)
-
     * [`HALO_SERVERS`](#halo_servers)
     * [`COMMAND_PERMISSIONS`](#command_permissions)
     * [`GAME_EVENTS.embeds`](#game_eventsembeds)
-
         * [Placeholders](#placeholders)
         * [Example 1: Chat event](#example-1-chat-event)
         * [Example 2: Death event with subtypes](#example-2-death-event-with-subtypes)
         * [Example 3: Score event using fields](#example-3-score-event-using-fields)
         * [Linking an event to a channel key](#linking-an-event-to-a-channel-key)
 * [Slash Commands](#slash-commands)
-
     * [`/game_status`](#game_status)
     * [`/sapp`](#sapp)
 * [License](#license)
@@ -39,7 +35,7 @@ forwarding in-game events as rich Discord embeds. Supports SAPP and Phasor.
 
 - Real-time event notifications: chat, deaths, scores, joins, leaves, map starts/ends, admin logins, and more.
 - **Bidirectional chat**: Send messages from Discord to in-game chat (channel-to-server mapping).
-- **Execute SAPP commands from Discord**: Run any SAPP command (e.g., `/sapp pl`, `/sapp map bloodgulch ctf`) and see
+- **Execute SAPP or Phasor commands from Discord**: Run any SAPP command (e.g., `/sapp pl`, `/sapp map bloodgulch ctf`) and see
   the output directly in Discord.
 - Multiple server support: one Discord bot can handle several Halo servers simultaneously, each on its own TCP port.
 - Per-server Discord channels: each game server can send its events to different Discord channels.
@@ -47,7 +43,7 @@ forwarding in-game events as rich Discord embeds. Supports SAPP and Phasor.
 - TCP communication with automatic reconnection from the Lua script.
 - Slash commands:
     - `/game_status` - shows bot health and per-server event statistics.
-    - `/sapp` - execute SAPP commands on any connected server.
+    - `/sapp` / `/phasor` - execute SAPP or Phasor commands on any connected server.
 
 ---
 
@@ -66,7 +62,8 @@ The latest stable version is packaged as a zip file containing:
 
 - `HaloDiscordBot.jar` - the main bot application
 - `config.yml` - configuration file (edit before running)
-- `discord.lua` - Lua script to place in SAPP's Lua folder
+- `sapp_discord.lua` - Lua script for SAPP servers
+- `phasor_discord.lua` - Lua script for Phasor V2 servers
 
 [![Download Latest Release](https://img.shields.io/badge/Download-Latest%20Release-brightgreen?logo=github&logoColor=white)](https://github.com/Chalwk/HaloDiscordBot/releases/latest)
 
@@ -75,29 +72,27 @@ The latest stable version is packaged as a zip file containing:
 1. Click the badge above to go to the Releases page.
 2. Look for the latest release (e.g., `v1.0.0`).
 3. Under Assets, click `HaloDiscordBot.zip` to download.
-4. Extract the zip - you will get all three files.
-
-> Development builds (bleeding edge) are available from GitHub Actions artifacts, but the Releases page is recommended
-> for most users.
+4. Extract the zip - you will get all four files.
 
 ---
 
-## Installation
-
 ### 1. Place Files (on the same machine as the game servers)
 
-From the downloaded zip, copy the following files to your Halo server's root directory (where `sapp.dll` resides):
+From the downloaded zip, copy the following files to your Halo server's root directory (where `sapp.dll` or `PhasorPC/CE.dll`
+resides):
 
 - `HaloDiscordBot.jar`
 - `config.yml`
 
-Additionally, place `discord.lua` inside your server's `lua` folder.
+For SAPP servers, place `sapp_discord.lua` inside the server's `lua` folder.
 
-For multiple servers, place `discord.lua` in each server's `lua` folder and use a unique port per server (configured in
-both `discord.lua` and `config.yml`).
+For Phasor V2 servers, place `phasor_discord.lua` inside the server's `persistent` folder.
+
+For multiple servers, place the appropriate Lua script in each server's script folder and use a unique port per server (
+configured in both the Lua script and `config.yml`).
 
 > [!IMPORTANT]
-> The Lua script requires `ljsocket.lua`
+> The Lua scripts require `ljsocket.lua`
 > from [CapsAdmin/luajitsocket](https://github.com/CapsAdmin/luajitsocket/blob/master/ljsocket.lua). Place it in your
 > server's root directory.
 
@@ -136,13 +131,13 @@ The bot will:
 - Start TCP servers on all ports defined in `HALO_SERVERS` inside `config.yml`.
 - Load slash commands automatically.
 
-Leave the terminal open. The bot must be running before each game server loads `discord.lua`.
+Leave the terminal open. The bot must be running before each game server loads `sapp_discord.lua`.
 
 ---
 
 ## Lua Script Configuration
 
-At the top of `discord.lua` you can adjust:
+At the top of both `sapp_discord.lua` and `phasor_discord.lua` you can adjust:
 
 ```lua
 local host = "127.0.0.1"     -- bot address (usually loopback)
@@ -150,12 +145,12 @@ local port = 47652           -- bot port, must match a port in config.yml
 local auto_connect = true    -- automatically connect on script load
 local reconnect_interval = 5 -- seconds between reconnection attempts
 local max_queue_size = 200   -- maximum message queue size
-```
+````
 
-If you run multiple Halo servers, give each server's `discord.lua` a different port (e.g., 47652, 47653, ...) and define
+If you run multiple Halo servers, give each server's Lua script a different port (e.g., 47652, 47653, ...) and define
 those ports in the bot's `HALO_SERVERS` list.
 
-The script automatically reconnects if the connection drops.
+The scripts automatically reconnect if the connection drops.
 
 ---
 
@@ -186,7 +181,7 @@ appears on Discord.
 A list of game servers the bot should accept connections from. Each server entry has:
 
 - `name` - A name used in logs and the `/game_status` command.
-- `port` - The TCP port this server will connect to (must match the port in its `discord.lua`).
+- `port` - The TCP port this server will connect to (must match the port in its Lua script configuration).
 - `channels` - A mapping of *channel keys* (like `general`, `admin`) to actual Discord channel IDs. These keys are
   referenced later in `GAME_EVENTS.embeds` to decide where each event type is sent.
 

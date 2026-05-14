@@ -209,7 +209,7 @@ public class GameEventProcessor {
         return sb.toString();
     }
 
-    // unescapes common sequences like \| \n \r that might come from discord.lua
+    // unescapes common sequences like \| \n \r that might come from sapp/phasor_discord.lua
     private String unescape(String s) {
         if (s == null) return "";
         return s.replace("\\|", "|")

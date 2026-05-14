@@ -39,7 +39,9 @@ jobs:
           mkdir -p release-package
           cp build/libs/HaloDiscordBot.jar release-package/
           cp config.yml release-package/
-          cp discord.lua release-package/
+          cp sapp_discord.lua release-package/
+          cp phasor_discord.lua release-package/
+          cp run.bat release-package/
           # Create the zip archive
           cd release-package
           zip -r ../HaloDiscordBot.zip .

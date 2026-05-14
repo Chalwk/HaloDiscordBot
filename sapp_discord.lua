@@ -1,6 +1,6 @@
 --[[
-=====================================================================================
-SCRIPT NAME:      discord.lua
+========================================================================================
+SCRIPT NAME:      sapp_discord.lua
 DESCRIPTION:      Logs Halo server events using LuaJitSocket TCP.
 
                   PREREQUISITES:
@@ -11,7 +11,7 @@ DESCRIPTION:      Logs Halo server events using LuaJitSocket TCP.
                      https://github.com/CapsAdmin/luajitsocket/blob/master/ljsocket.lua
 
 Copyright (c) 2026 Jericho Crosby (Chalwk)
-=====================================================================================
+========================================================================================
 ]]
 
 -- CONFIG START --
@@ -31,7 +31,6 @@ local os_time = os.time
 local pcall = pcall
 local table_insert, table_remove = table.insert, table.remove
 local tonumber, tostring = tonumber, tostring
-local string_format = string.format
 local type = type
 
 local get_dynamic_player = get_dynamic_player
@@ -40,8 +39,8 @@ local lookup_tag = lookup_tag
 local player_present, player_alive = player_present, player_alive
 local read_byte, read_dword = read_byte, read_dword
 
-local distance_tag
-local falling_tag
+local distance
+local falling
 local ffa
 local first_blood
 local gametype
@@ -50,8 +49,7 @@ local map
 local mode
 local players
 local score_limit
-local server_name
-local current_request_id = nil
+local current_request_id
 
 local COMMAND_TYPE = { [0] = "RCON", [1] = "CONSOLE", [2] = "CHAT", [3] = "UNKNOWN" }
 local CHAT_TYPE = { [0] = "GLOBAL", [1] = "TEAM", [2] = "VEHICLE", [3] = "UNKNOWN" }
@@ -95,7 +93,7 @@ local sock = nil
 local is_connected = false
 local reconnect_timer_active = false
 local message_queue = {}
-local incoming_buffer = "" -- buffer for partial data
+local incoming_buffer = ""
 
 local function load_socket()
     local ok, mod = pcall(require, "ljsocket")
@@ -113,6 +111,7 @@ local function schedule_reconnect()
     timer(reconnect_interval * 1000, "OnReconnect")
 end
 
+-- Timer callback that attempts to reconnect if the bot is disconnected.
 function OnReconnect()
     if is_connected or not auto_connect then
         reconnect_timer_active = false
@@ -128,6 +127,7 @@ function OnReconnect()
     return false
 end
 
+-- Establish a TCP connection to the Discord bot.
 function connect_to_bot(target_host, target_port)
     if not socket_lib then
         cprint("[HaloDiscordBot] LuaJitSocket not loaded")
@@ -169,7 +169,6 @@ function connect_to_bot(target_host, target_port)
     is_connected = true
     cprint("[HaloDiscordBot] Connected to " .. target_host .. ":" .. target_port)
 
-    -- Start polling for incoming data (every second)
     timer(1000, "OnPollIncoming")
 
     if #message_queue > 0 then
@@ -183,17 +182,21 @@ function connect_to_bot(target_host, target_port)
             count = count + 1
         end
 
-        -- Efficient in-place removal of sent messages
         if count > 0 then
             local q = message_queue
             local len = #q
-            for i = 1, len - count do q[i] = q[i + count] end
-            for i = len - count + 1, len do q[i] = nil end
+            for i = 1, len - count do
+                q[i] = q[i + count]
+            end
+            for i = len - count + 1, len do
+                q[i] = nil
+            end
         end
     end
     return true
 end
 
+-- Close the current connection and reset state.
 local function disconnect()
     reconnect_timer_active = false
     if sock then
@@ -204,8 +207,22 @@ local function disconnect()
     cprint("[HaloDiscordBot] Disconnected")
 end
 
+-- Send raw data over the socket. If disconnected, queue the message.
+-- data: string to send.
+-- Returns true if sent immediately, false if queued or error.
 local function send_data(data)
     if not is_connected then
+        table_insert(message_queue, data)
+        if #message_queue > max_queue_size then
+            table_remove(message_queue, 1)
+        end
+        if auto_connect then schedule_reconnect() end
+        return false
+    end
+
+    if not sock then
+        -- Should not happen if is_connected is true, but guard anyway!
+        is_connected = false
         table_insert(message_queue, data)
         if #message_queue > max_queue_size then
             table_remove(message_queue, 1)
@@ -230,7 +247,7 @@ local function send_data(data)
     return true
 end
 
--- Process complete lines from the incoming buffer
+-- Process complete lines from the incoming buffer ("say_all" and "exec" commands).
 local function process_buffer()
     while true do
         local nl_pos = incoming_buffer:find("\n")
@@ -248,13 +265,14 @@ local function process_buffer()
         elseif line:find("^exec ") then
             local cmd = line:sub(6)
             local parts = {}
-            for part in cmd:gmatch("%S+") do table_insert(parts, part) end
+            for part in cmd:gmatch("%S+") do
+                table_insert(parts, part)
+            end
             if #parts >= 4 then
                 local reqId = parts[1]
                 local playerIndex = tonumber(parts[2]) or 0
                 local echo = parts[3] == "1"
                 local command = concat(parts, " ", 4)
-
                 cprint("[HaloDiscordBot] Executing command: " .. command)
                 current_request_id = reqId
                 execute_command(command, playerIndex, echo)
@@ -268,7 +286,8 @@ local function process_buffer()
     end
 end
 
--- Poll for incoming data (non-blocking, chunked read)
+-- Poll for incoming data (non-blocking, chunked read).
+-- Timer callback that reads from the socket and processes lines.
 function OnPollIncoming()
     if not is_connected or not sock then return true end
 
@@ -299,10 +318,6 @@ function OnPollIncoming()
     return true
 end
 
-local function respond(id)
-    return id == 0 and cprint or function(msg) rprint(id, msg) end
-end
-
 local function is_chat_command(s)
     local first_char = s:sub(1, 1)
     return first_char == "/" or first_char == "\\"
@@ -317,6 +332,8 @@ local function escape_value(value)
     return str
 end
 
+-- Format an event as a pipe-separated string.
+-- subtype: numeric subtype for event_death and event_score
 local function format_event(event_type, data_table, subtype)
     local parts = { event_type }
     if subtype then table_insert(parts, "subtype=" .. escape_value(subtype)) end
@@ -342,12 +359,7 @@ local function read_wide_string(address, length)
     return concat(bytes)
 end
 
-local function get_server_name()
-    local network_struct = read_dword(sig_scan("F3ABA1????????BA????????C740??????????E8????????668B0D") + 3)
-    return read_wide_string(network_struct + 0x8, 0x42)
-end
-
-local function get_tag(class, name)
+local function get_tag_id(class, name)
     local tag = lookup_tag(class, name)
     return tag ~= 0 and read_dword(tag + 0xC) or nil
 end
@@ -360,20 +372,18 @@ local function new_player(id)
         ip = get_var(id, '$ip'),
         name = get_var(id, '$name'),
         team = get_var(id, '$team'),
-        hash = get_var(id, '$hash'),
-        level = function() return tonumber(get_var(id, '$lvl')) end
+        hash = get_var(id, '$hash')
     }
 end
 
-local function get_player_data(player, isQuit)
+local function get_player_data(player, quit)
     local total = tonumber(get_var(0, '$pn'))
     return {
-        total = isQuit and total - 1 or total,
+        total = quit and total - 1 or total,
         name = player.name,
         ip = player.ip,
         hash = player.hash,
         id = player.id,
-        lvl = player.level(),
         ping = get_var(player.id, "$ping"),
         pirated = PIRATED_HASHES[player.hash] and 'YES' or 'NO'
     }
@@ -384,23 +394,25 @@ local function in_vehicle(id)
     return dyn_player ~= 0 and read_dword(dyn_player + 0x11C) ~= 0xFFFFFFFF
 end
 
-function OnStart(notifyFlag)
+function OnStart(notify)
     gametype = get_var(0, "$gt")
     if gametype == 'n/a' then return end
-    if not server_name then server_name = get_server_name() end
 
-    players, first_blood = {}, true
+    players = {}
+    first_blood = true
     ffa = get_var(0, '$ffa') == '1'
+
     mode, map = get_var(0, "$mode"), get_var(0, "$map")
-    falling_tag, distance_tag = get_tag('jpt!', 'globals\\falling'), get_tag('jpt!', 'globals\\distance')
     score_limit = read_byte(gametype_base + 0x58)
 
-    if not notifyFlag or notifyFlag == 0 then
+    falling, distance = get_tag_id('jpt!', 'globals\\falling'), get_tag_id('jpt!', 'globals\\distance')
+
+    if not notify or notify == 0 then
         log_event("event_start", { map = map, mode = mode, gt = gametype, ffa = ffa and "true" or "false" })
     end
 
     for i = 1, 16 do
-        if player_present(i) then OnJoin(i, notifyFlag) end
+        if player_present(i) then OnJoin(i, notify) end
     end
 end
 
@@ -408,9 +420,14 @@ function OnEnd()
     log_event("event_end", { map = map, mode = mode, gt = gametype, ffa = ffa and "true" or "false" })
 end
 
-function OnJoin(id, notifyFlag)
+function OnJoin(id, notify)
     players[id] = new_player(id)
-    if not notifyFlag then log_event("event_join", get_player_data(players[id])) end
+    if notify then return end -- don't log join events if notify is set
+
+    local player = players[id]
+    if player then
+        log_event("event_join", get_player_data(player))
+    end
 end
 
 function OnQuit(id)
@@ -424,7 +441,8 @@ end
 function OnSpawn(id)
     local player = players[id]
     if player then
-        player.last_damage, player.switched = 0, nil
+        player.last_damage = 0
+        player.switched = nil
         log_event("event_spawn", { name = player.name, team = player.team })
     end
 end
@@ -432,7 +450,8 @@ end
 function OnSwitch(id)
     local player = players[id]
     if player then
-        player.team, player.switched = get_var(id, '$team'), true
+        player.team = get_var(id, '$team')
+        player.switched = true
         log_event("event_team_switch", { name = player.name, team = player.team })
     end
 end
@@ -443,12 +462,16 @@ end
 
 function OnLogin(id)
     local player = players[id]
-    if player then log_event("event_login", { name = player.name, lvl = player.level() }) end
+    if player then
+        log_event("event_login", { name = player.name })
+    end
 end
 
 function OnSnap(id)
     local player = players[id]
-    if player then log_event("event_snap", { name = player.name }) end
+    if player then
+        log_event("event_snap", { name = player.name })
+    end
 end
 
 function OnEcho(playerIndex, message)
@@ -459,64 +482,10 @@ function OnEcho(playerIndex, message)
     end
 end
 
-local function handle_discord_command(id, command)
-    local player = players[id]
-    if not player then return false end
-    if player.level() < 2 then
-        respond(id)("[HaloDiscordBot] Insufficient permissions")
-        return false
-    end
-
-    local args = {}
-    for word in command:gmatch("([^%s]+)") do args[#args + 1] = word end
-    local sub_cmd = args[2] and args[2]:lower()
-    if not sub_cmd then
-        respond(id)("Usage: /discord <connect|disconnect|status|reconnect> [host] [port]")
-        return false
-    end
-
-    local tell = respond(id)
-    if sub_cmd == "connect" then
-        local new_host = args[3] or host
-        local new_port = tonumber(args[4] or tostring(port))
-        if not new_port or new_port < 1 or new_port > 65535 then
-            tell("Invalid port number.")
-            return false
-        end
-        host, port = new_host, new_port
-        auto_connect = true
-        disconnect()
-        connect_to_bot(host, port)
-        if not is_connected then schedule_reconnect() end
-        return false
-    elseif sub_cmd == "disconnect" then
-        auto_connect = false
-        disconnect()
-        tell("Auto-connect disabled. Connection closed.")
-        return false
-    elseif sub_cmd == "status" then
-        local status = is_connected and "connected" or "disconnected"
-        local auto_str = auto_connect and "ON" or "OFF"
-        tell(string_format("[HaloDiscordBot] Status: %s | Auto-connect: %s | %s:%d", status, auto_str, host, port))
-        return false
-    elseif sub_cmd == "reconnect" then
-        disconnect()
-        auto_connect = true
-        connect_to_bot(host, port)
-        if not is_connected then schedule_reconnect() end
-        return false
-    else
-        tell("Unknown sub-command. Usage: /discord <connect|disconnect|status|reconnect>")
-        return false
-    end
-end
-
 function OnCommand(id, command, env)
     local player = players[id]
     if not player then return true end
-    if command:lower():match("^discord%s") then return handle_discord_command(id, command) end
     log_event("event_command", {
-        lvl = player.level(),
         name = player.name,
         id = tostring(id),
         type = COMMAND_TYPE[env],
@@ -536,8 +505,10 @@ end
 function OnScore(id)
     local player = players[id]
     if not player then return end
+
     local event_type = GAMETYPE_MAP[gametype] or (gametype == "race" and (ffa and 3 or 2))
     if not event_type then return end
+
     log_event("event_score", {
         total_team_laps = player.team == "red" and get_var(0, "$redscore") or get_var(0, "$bluescore"),
         score = get_var(id, "$score"),
@@ -546,22 +517,26 @@ function OnScore(id)
         red_score = get_var(0, "$redscore"),
         blue_score = get_var(0, "$bluescore"),
         scorelimit = score_limit
-    }, event_type)
+    }, event_type
+    )
 end
 
 function OnDamage(victim, _, metaId)
-    local player = players[tonumber(victim)]
+    local player = players[victim]
     if player then player.last_damage = metaId end
 end
 
 function OnDeath(victim, killer)
     victim, killer = tonumber(victim), tonumber(killer)
-    local victim_data, killer_data = players[victim], players[killer]
+
+    local victim_data = players[victim]
     if not victim_data then return end
+
+    local killer_data = players[killer]
 
     local event_type = 10
     if killer == -1 and not victim_data.switched then
-        event_type = (victim_data.last_damage == falling_tag or victim_data.last_damage == distance_tag) and 8 or 9
+        event_type = (victim_data.last_damage == falling or victim_data.last_damage == distance) and 8 or 9
     elseif killer == 0 then
         event_type = 7
     elseif killer > 0 then
@@ -570,7 +545,8 @@ function OnDeath(victim, killer)
         elseif not ffa and killer_data and victim_data.team == killer_data.team then
             event_type = 6
         elseif first_blood then
-            first_blood = false; event_type = 1
+            first_blood = false
+            event_type = 1
         elseif not player_alive(killer) then
             event_type = 2
         elseif in_vehicle(victim) then
@@ -583,11 +559,11 @@ function OnDeath(victim, killer)
     log_event("event_death", {
         killer_name = killer_data and killer_data.name or "",
         victim_name = victim_data.name
-    }, event_type)
+    }, event_type
+    )
 end
 
 function OnScriptLoad()
-    -- Load socket library
     if not load_socket() then
         cprint("[HaloDiscordBot] FATAL: LuaJitSocket missing, cannot send events")
         return
@@ -611,13 +587,12 @@ function OnScriptLoad()
     register_callback(cb['EVENT_TEAM_SWITCH'], 'OnSwitch')
     register_callback(cb['EVENT_ECHO'], 'OnEcho')
 
-    -- Connect to Discord bot
     if auto_connect then
         connect_to_bot(host, port)
         if not is_connected then schedule_reconnect() end
     end
 
-    OnStart(1) -- in case script is loaded mid-game
+    OnStart(1)
 end
 
 function OnScriptUnload()

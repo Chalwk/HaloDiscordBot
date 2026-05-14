@@ -24,7 +24,7 @@
     "get_object",
     "get_object_memory",
     "get_player",
-    "get_tag",
+    "get_tag_id",
     "get_var",
     "gethash",
     "getip",

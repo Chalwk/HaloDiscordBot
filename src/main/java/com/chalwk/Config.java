@@ -41,10 +41,8 @@ public class Config {
                     String name = (String) map.get("name");
                     Object portObj = map.get("port");
                     int port = (portObj instanceof Number) ? ((Number) portObj).intValue() : 0;
-                    // skip if port is invalid or name is missing
                     if (port <= 0 || name == null || name.isBlank()) continue;
 
-                    // per-server channel overrides - can be empty
                     Map<String, String> channels = new HashMap<>();
                     Object channelsObj = map.get("channels");
                     if (channelsObj instanceof Map<?, ?>) {
