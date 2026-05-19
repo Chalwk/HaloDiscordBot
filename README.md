@@ -14,7 +14,6 @@ forwarding in-game events as rich Discord embeds. Supports SAPP and Phasor.
     * [3. Running the Bot](#3-running-the-bot)
 * [Lua Script Configuration](#lua-script-configuration)
     * [SAPP vs Phasor differences](#sapp-vs-phasor-differences)
-* [Protocol Specification](#protocol-specification)
 * [Configuration File (`config.yml`)](#configuration-file-configyml)
     * [`HALO_SERVERS`](#halo_servers)
     * [`COMMAND_PERMISSIONS`](#command_permissions)
@@ -27,6 +26,7 @@ forwarding in-game events as rich Discord embeds. Supports SAPP and Phasor.
 * [Slash Commands](#slash-commands)
     * [`/game_status`](#game_status)
     * [`/halo`](#halo)
+* [Protocol Specification](#protocol-specification)
 * [License](#license)
 
 ---
@@ -177,26 +177,6 @@ The Phasor version (`phasor_discord.lua`) has the following limitations compared
   by Phasor. These events will never appear in Discord.
 
 All other events (chat, death, join, leave, score, start, end, team switch, spawn, and command logs) work identically.
-
----
-
-## Protocol Specification
-
-Events are sent as plain text lines with the format:
-
-```
-event_type|key1=value1|key2=value2|...|timestamp=unix_seconds
-```
-
-Special characters are escaped: `|` → `\|`, newline → `\n`, carriage return → `\r`.
-
-Example:  
-`event_chat|name=Player1|msg=Hello world|timestamp=1700000000`
-
-The bot parses these lines and builds Discord embeds according to `config.yml`.
-
-> **Note:** `event_echo` is sent only by SAPP (not Phasor). This event carries command output and is used by the `/halo`
-> command.
 
 ---
 
@@ -405,6 +385,26 @@ When multiple servers are defined in `config.yml`, the `/halo` command includes 
 ```
 
 This runs `sv_map_next` only on the server named "Main Server".
+
+---
+
+## Protocol Specification
+
+Events are sent as plain text lines with the format:
+
+```
+event_type|key1=value1|key2=value2|...|timestamp=unix_seconds
+```
+
+Special characters are escaped: `|` → `\|`, newline → `\n`, carriage return → `\r`.
+
+Example:  
+`event_chat|name=Player1|msg=Hello world|timestamp=1700000000`
+
+The bot parses these lines and builds Discord embeds according to `config.yml`.
+
+> **Note:** `event_echo` is sent only by SAPP (not Phasor). This event carries command output and is used by the `/halo`
+> command.
 
 ---
 
