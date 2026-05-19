@@ -10,9 +10,8 @@ forwarding in-game events as rich Discord embeds. Supports SAPP and Phasor.
 * [Download](#download)
 * [Installation](#installation)
     * [1. Place Files](#1-place-files-on-the-same-machine-as-the-game-servers)
-    * [2. Discord Bot Token](#2-discord-bot-token)
-    * [3. Discord Intents & Bot Invite](#3-discord-intents--bot-invite)
-    * [4. Running the Bot](#4-running-the-bot)
+    * [2. Discord Setup](#2-discord-setup)
+    * [3. Running the Bot](#3-running-the-bot)
 * [Lua Script Configuration](#lua-script-configuration)
     * [SAPP vs Phasor differences](#sapp-vs-phasor-differences)
 * [Protocol Specification](#protocol-specification)
@@ -54,8 +53,8 @@ forwarding in-game events as rich Discord embeds. Supports SAPP and Phasor.
 
 - Java 17+
 - SAPP (10.2.1) or Phasor V2
-- LuaJIT Socket supporting Lua 5.1 (
-  from [CapsAdmin/luajitsocket](https://github.com/CapsAdmin/luajitsocket/blob/master/ljsocket.lua))
+- LuaJIT Socket (`ljsocket.lua`) supporting Lua
+  5.1 ([CapsAdmin/luajitsocket](https://github.com/CapsAdmin/luajitsocket/blob/master/ljsocket.lua))
 
 ---
 
@@ -75,7 +74,7 @@ The latest stable version is packaged as a zip file containing:
 **How to download:**
 
 1. Click the badge above to go to the Releases page.
-2. Look for the latest release (e.g., `v1.0.0`).
+2. Look for the latest release (e.g., `v1.0.2`).
 3. Under Assets, click `HaloDiscordBot.zip` to download.
 4. Extract the zip - you will get all six files.
 
@@ -103,8 +102,9 @@ configured in both the Lua script and `config.yml`).
 > from [CapsAdmin/luajitsocket](https://github.com/CapsAdmin/luajitsocket/blob/master/ljsocket.lua). Place it in your
 > server's root directory.
 
-### 2. Discord Bot Token
+### 2. Discord Setup
 
+> [!IMPORTANT]
 > The bot requires the environment variable `HALO_DISCORD_BOT_TOKEN`. Get a token from
 > the [Discord Developer Portal](https://discord.com/developers/applications/).
 
@@ -114,8 +114,6 @@ configured in both the Lua script and `config.yml`).
   `export HALO_DISCORD_BOT_TOKEN="your-token-here"`  
   then run `source ~/.bashrc`.
 
-### 3. Discord Intents & Bot Invite
-
 In the Discord Developer Portal:
 
 - Enable Privileged Gateway Intents: `MESSAGE CONTENT` (required) and `GUILD_MESSAGES`.
@@ -124,7 +122,7 @@ In the Discord Developer Portal:
 
 Invite the bot to your server.
 
-### 4. Running the Bot
+### 3. Running the Bot
 
 From the server root directory (where `config.yml` is located):
 
