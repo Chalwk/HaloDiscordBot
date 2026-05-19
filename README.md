@@ -19,10 +19,7 @@ forwarding in-game events as rich Discord embeds. Supports SAPP and Phasor.
     * [`COMMAND_PERMISSIONS`](#command_permissions)
     * [`GAME_EVENTS.embeds`](#game_eventsembeds)
         * [Placeholders](#placeholders)
-        * [Example 1: Chat event](#example-1-chat-event)
-        * [Example 2: Death event with subtypes](#example-2-death-event-with-subtypes)
-        * [Example 3: Score event using fields](#example-3-score-event-using-fields)
-        * [Linking an event to a channel key](#linking-an-event-to-a-channel-key)
+        * [Examples](#examples)
 * [Slash Commands](#slash-commands)
     * [`/game_status`](#game_status)
     * [`/halo`](#halo)
@@ -260,7 +257,12 @@ actual value from the game event. Common keys:
 - `{lvl}` - admin level of a logged-in admin
 - `{cmd}` - command string executed
 
-#### Example 1: Chat event
+#### Examples
+
+Click on each example to expand.
+
+<details>
+<summary><strong>Example 1: Chat event</strong></summary>
 
 ```yaml
 event_chat:
@@ -274,7 +276,10 @@ event_chat:
 This sends a white embed to the Discord channel that the server maps to the key `general`. The description shows the
 player name and message.
 
-#### Example 2: Death event with subtypes
+</details>
+
+<details>
+<summary><strong>Example 2: Death event with subtypes</strong></summary>
 
 ```yaml
 event_death:
@@ -291,7 +296,10 @@ event_death:
 The Lua script sends a `subtype` number (e.g., 1, 4, 5). The bot picks the matching message. If a subtype is not listed,
 the event uses the `description` field (or does nothing if `description` is missing).
 
-#### Example 3: Score event using fields
+</details>
+
+<details>
+<summary><strong>Example 3: Score event using fields</strong></summary>
 
 ```yaml
 event_score:
@@ -312,6 +320,8 @@ event_score:
 ```
 
 Instead of a single description, this creates three small inline fields inside the embed.
+
+</details>
 
 #### Linking an event to a channel key
 
@@ -365,6 +375,9 @@ single server automatically.
 
 #### Examples
 
+<details>
+<summary><strong>Click to expand command examples</strong></summary>
+
 **List all players on the server**
 
 ```
@@ -385,6 +398,8 @@ When multiple servers are defined in `config.yml`, the `/halo` command includes 
 ```
 
 This runs `sv_map_next` only on the server named "Main Server".
+
+</details>
 
 ---
 
