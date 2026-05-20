@@ -33,15 +33,15 @@ public class HaloCommand extends BaseCommand {
             for (GameEventProcessor p : processors) {
                 serverOption.addChoice(p.getServerName(), p.getServerName());
             }
-            return Commands.slash("halo", "Execute a server command on the game server (SAPP or Phasor)").addOptions(commandOption, serverOption);
+            return Commands.slash("halo", "Execute a server command on the game server").addOptions(commandOption, serverOption);
         } else {
-            return Commands.slash("halo", "Execute a server command on the game server (SAPP or Phasor)").addOptions(commandOption);
+            return Commands.slash("halo", "Execute a server command on the game server").addOptions(commandOption);
         }
     }
 
     @Override
     public String getDescription() {
-        return "Execute a server command on the game server (SAPP or Phasor)";
+        return "Execute a server command on the game server";
     }
 
     @Override

@@ -1,7 +1,7 @@
 # HaloDiscordBot
 
 A Java application using [JDA](https://github.com/discord-jda/JDA) that connects multiple Halo servers to Discord,
-forwarding in-game events as rich Discord embeds. Supports SAPP and Phasor.
+forwarding in-game events as rich Discord embeds. Supports SAPP only.
 
 ## Table of Contents
 
@@ -14,7 +14,6 @@ forwarding in-game events as rich Discord embeds. Supports SAPP and Phasor.
     * [2. Discord Setup](#2-discord-setup)
     * [3. Running the Bot](#3-running-the-bot)
 * [Lua Script Configuration](#lua-script-configuration)
-    * [SAPP vs Phasor differences](#sapp-vs-phasor-differences)
 * [Configuration File (`config.yml`)](#configuration-file-configyml)
     * [`HALO_SERVERS`](#halo_servers)
     * [`COMMAND_PERMISSIONS`](#command_permissions)
@@ -33,24 +32,21 @@ forwarding in-game events as rich Discord embeds. Supports SAPP and Phasor.
 
 - Real-time event notifications: chat, deaths, scores, joins, leaves, map starts/ends, admin logins, and more.
 - **Bidirectional chat**: Send messages from Discord to in-game chat (channel-to-server mapping).
-- **Execute server commands from Discord**: Run any command from SAPP or Phasor and see the output directly in
-  Discord.  
-  *Note for Phasor users: Command output is not supported (no `/halo` command feedback).*
+- **Execute server commands from Discord**: Run any SAPP command and see the output directly in Discord.
 - Multiple server support: one Discord bot can handle several Halo servers simultaneously, each on its own TCP port.
 - Per-server Discord channels: each game server can send its events to different Discord channels.
 - Configurable embeds: custom titles, colors, descriptions, and per-subtype death/score messages.
 - TCP communication with automatic reconnection from the Lua script.
 - Slash commands:
     - `/game_status` - shows bot health and per-server event statistics.
-    - `/halo` - execute a console command (SAPP or Phasor) on any connected server.  
-      For Phasor, the command runs but no output is returned.
+    - `/halo` - execute a console command on any connected server.
 
 ---
 
 ## Requirements
 
 - Java 17+
-- SAPP (10.2.1) or Phasor V2
+- SAPP (10.2.1) with Lua API version "1.11.0.0+"
 - LuaJIT Socket (`ljsocket.lua`) supporting Lua
   5.1 ([CapsAdmin/luajitsocket](https://github.com/CapsAdmin/luajitsocket/blob/master/ljsocket.lua))
 
@@ -74,7 +70,6 @@ The latest stable version is packaged as a zip file containing:
 - `run.bat` - Windows launcher script (optional)
 - `run.sh` - Linux/macOS launcher script (optional)
 - `sapp_discord.lua` - Lua script for SAPP servers
-- `phasor_discord.lua` - Lua script for Phasor V2 servers
 
 [![Download Latest Release](https://img.shields.io/badge/Download-Latest%20Release-brightgreen?logo=github&logoColor=white)](https://github.com/Chalwk/HaloDiscordBot/releases/latest)
 
@@ -83,7 +78,7 @@ The latest stable version is packaged as a zip file containing:
 1. Click the badge above to go to the Releases page.
 2. Look for the latest release (e.g., `v1.0.2`).
 3. Under Assets, click `HaloDiscordBot.zip` to download.
-4. Extract the zip - you will get all six files.
+4. Extract the zip - you will get all five files.
 
 ---
 
@@ -91,21 +86,18 @@ The latest stable version is packaged as a zip file containing:
 
 ### 1. Place Files (on the same machine as the game servers)
 
-From the downloaded zip, copy the following files to your Halo server's root directory (where `sapp.dll` or
-`PhasorPC/CE.dll` resides):
+From the downloaded zip, copy the following files to your Halo server's root directory (where `sapp.dll` resides):
 
 - `HaloDiscordBot.jar`
 - `config.yml`
 
-For SAPP servers, place `sapp_discord.lua` inside the server's `lua` folder.
+Place `sapp_discord.lua` inside the server's `lua` folder.
 
-For Phasor V2 servers, place `phasor_discord.lua` inside the server's `persistent` folder.
-
-For multiple servers, place the appropriate Lua script in each server's script folder and use a unique port per server (
-configured in both the Lua script and `config.yml`).
+For multiple servers, place the Lua script in each server's script folder and use a unique port per server (configured
+in both the Lua script and `config.yml`).
 
 > [!IMPORTANT]
-> The Lua scripts require `ljsocket.lua`
+> The SAPP Lua script requires `ljsocket.lua`
 > from [CapsAdmin/luajitsocket](https://github.com/CapsAdmin/luajitsocket/blob/master/ljsocket.lua). Place it in your
 > server's root directory.
 
@@ -159,7 +151,7 @@ The bot will:
 
 ## Lua Script Configuration
 
-At the top of both `sapp_discord.lua` and `phasor_discord.lua` you can adjust:
+At the top of `sapp_discord.lua` you can adjust:
 
 ```lua
 local host = "127.0.0.1"     -- bot address (usually loopback)
@@ -172,18 +164,7 @@ local max_queue_size = 200   -- maximum message queue size
 If you run multiple Halo servers, give each server's Lua script a different port (e.g., 47652, 47653, ...) and define
 those ports in the bot's `HALO_SERVERS` list.
 
-The scripts automatically reconnect if the connection drops.
-
-### SAPP vs Phasor differences
-
-The Phasor version (`phasor_discord.lua`) has the following limitations compared to the SAPP version:
-
-- **No command output:** Phasor does not provide an `OnEcho` callback, so the bot cannot capture command results. The
-  `/halo` slash command will execute the command but return *"✅ Command executed (no output)"*.
-- **Missing events:** `event_login` (admin login), `event_snap` (bot detection), and `event_map_reset` are not triggered
-  by Phasor. These events will never appear in Discord.
-
-All other events (chat, death, join, leave, score, start, end, team switch, spawn, and command logs) work identically.
+The script automatically reconnects if the connection drops.
 
 ---
 
@@ -365,10 +346,7 @@ Requires `ADMINISTRATOR` permission by default (configurable).
 
 ### `/halo`
 
-Executes any server command directly on a connected Halo server (works with both SAPP and Phasor) and returns the output
-as a Discord embed.  
-**For Phasor servers, command output is not available** – the bot will only confirm execution without showing any
-output.
+Executes any server command directly on a connected Halo server and returns the output as a Discord embed.
 
 #### Parameters
 
@@ -380,8 +358,8 @@ output.
 \* When only one server is defined in `HALO_SERVERS`, the `server` option is omitted and the command is sent to that
 single server automatically.
 
-> **Note:** The command uses a timeout of 5 seconds. For SAPP, if the server produces a lot of output, the bot will wait
-> up to 300ms between lines to capture everything. For Phasor, the command is sent without expecting any output.
+> **Note:** The command uses a timeout of 5 seconds. If the server produces a lot of output, the bot will wait up to
+> 300ms between lines to capture everything.
 
 #### Examples
 
@@ -428,8 +406,7 @@ Example:
 
 The bot parses these lines and builds Discord embeds according to `config.yml`.
 
-> **Note:** `event_echo` is sent only by SAPP (not Phasor). This event carries command output and is used by the `/halo`
-> command.
+> **Note:** `event_echo` is sent by SAPP and carries command output, used by the `/halo` command.
 
 ---
 
