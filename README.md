@@ -58,7 +58,7 @@ forwarding in-game events as rich Discord embeds. Supports SAPP and Phasor.
 
 ## Important Notice
 
-[!WARNING]
+> [!WARNING]
 > Currently, the bot must run on the same machine as the Halo game server. A future update will add support for running
 > the bot on a separate machine. For now, please ensure the bot and the game server are on the same physical or virtual
 > machine.
