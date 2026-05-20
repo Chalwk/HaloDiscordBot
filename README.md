@@ -7,9 +7,10 @@ forwarding in-game events as rich Discord embeds. Supports SAPP and Phasor.
 
 * [Features](#features)
 * [Requirements](#requirements)
+* [Important Notice](#important-notice)
 * [Download](#download)
 * [Installation](#installation)
-    * [1. Place Files](#1-place-files-on-the-same-machine-as-the-game-servers)
+    * [1. Place Files on the Same Machine as the Game Servers](#1-place-files-on-the-same-machine-as-the-game-servers)
     * [2. Discord Setup](#2-discord-setup)
     * [3. Running the Bot](#3-running-the-bot)
 * [Lua Script Configuration](#lua-script-configuration)
@@ -52,6 +53,15 @@ forwarding in-game events as rich Discord embeds. Supports SAPP and Phasor.
 - SAPP (10.2.1) or Phasor V2
 - LuaJIT Socket (`ljsocket.lua`) supporting Lua
   5.1 ([CapsAdmin/luajitsocket](https://github.com/CapsAdmin/luajitsocket/blob/master/ljsocket.lua))
+
+---
+
+## Important Notice
+
+[!WARNING]
+> Currently, the bot must run on the same machine as the Halo game server. A future update will add support for running
+> the bot on a separate machine. For now, please ensure the bot and the game server are on the same physical or virtual
+> machine.
 
 ---
 
