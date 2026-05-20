@@ -40,7 +40,15 @@ public class Main {
 
         // start a TCP server for each configured Halo server
         for (Config.HaloServerConfig serverConfig : servers) {
-            GameEventTcpServer server = new GameEventTcpServer(jda, config, serverConfig.name(), serverConfig.port());
+            GameEventTcpServer server = new GameEventTcpServer(
+                    jda,
+                    config,
+                    serverConfig.name(),
+                    serverConfig.port(),
+                    serverConfig.bindAddress(),
+                    serverConfig.secretKey(),
+                    serverConfig.allowedIps()
+            );
             server.start();
             allProcessors.add(server.getProcessor());
         }

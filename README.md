@@ -10,7 +10,7 @@ forwarding in-game events as rich Discord embeds. Supports SAPP only.
 * [Important Notice](#important-notice)
 * [Download](#download)
 * [Installation](#installation)
-    * [1. Place Files on the Same Machine as the Game Servers](#1-place-files-on-the-same-machine-as-the-game-servers)
+    * [1. Place Files](#1-place-files)
     * [2. Discord Setup](#2-discord-setup)
     * [3. Running the Bot](#3-running-the-bot)
 * [Lua Script Configuration](#lua-script-configuration)
@@ -36,6 +36,8 @@ forwarding in-game events as rich Discord embeds. Supports SAPP only.
 - Multiple server support: one Discord bot can handle several Halo servers simultaneously, each on its own TCP port.
 - Per-server Discord channels: each game server can send its events to different Discord channels.
 - Configurable embeds: custom titles, colors, descriptions, and per-subtype death/score messages.
+- **Secure remote hosting**: Run the bot on a different machine than your game servers with built‑in authentication and
+  IP whitelisting.
 - TCP communication with automatic reconnection from the Lua script.
 - Slash commands:
     - `/game_status` - shows bot health and per-server event statistics.
@@ -54,10 +56,9 @@ forwarding in-game events as rich Discord embeds. Supports SAPP only.
 
 ## Important Notice
 
-> [!WARNING]
-> Currently, the bot must run on the same machine as the Halo game server. A future update will add support for running
-> the bot on a separate machine. For now, please ensure the bot and the game server are on the same physical or virtual
-> machine.
+> **The bot can now run on a separate machine from your Halo game servers.**  
+> Use the `bind_address`, `secret_key`, and `allowed_ips` settings (see [Configuration](#configuration-file-configyml))
+> to securely accept remote connections.
 
 ---
 
@@ -84,21 +85,21 @@ The latest stable version is packaged as a zip file containing:
 
 ## Installation
 
-### 1. Place Files (on the same machine as the game servers)
+### 1. Place Files
 
-From the downloaded zip, copy the following files to your Halo server's root directory (where `sapp.dll` resides):
+Copy the following files to your **bot machine** (this can be the same as the game server or a different one):
 
 - `HaloDiscordBot.jar`
 - `config.yml`
 
-Place `sapp_discord.lua` inside the server's `lua` folder.
+Place `sapp_discord.lua` inside **each Halo server's** `lua` folder.
 
 For multiple servers, place the Lua script in each server's script folder and use a unique port per server (configured
 in both the Lua script and `config.yml`).
 
 > [!IMPORTANT]
 > The SAPP Lua script requires `ljsocket.lua`
-> from [CapsAdmin/luajitsocket](https://github.com/CapsAdmin/luajitsocket/blob/master/ljsocket.lua). Place it in your
+> from [CapsAdmin/luajitsocket](https://github.com/CapsAdmin/luajitsocket/blob/master/ljsocket.lua). Place it in your game
 > server's root directory.
 
 ### 2. Discord Setup
@@ -123,23 +124,20 @@ Invite the bot to your server.
 
 ### 3. Running the Bot
 
-From the server root directory (where `config.yml` is located):
+From the directory where `config.yml` is located (on the bot machine):
 
 ```bash
 java -jar HaloDiscordBot.jar
 ```
 
-**Alternatively, you can use the provided launcher scripts:**
+**Alternatively, use the provided launcher scripts:**
 
-- **Windows:** double-click `run.bat` (provided in the zip). The batch file simplifies the process and keeps the
-  terminal window open after the bot stops.
+- **Windows:** double-click `run.bat`. The batch file simplifies the process and keeps the terminal window open after the bot stops.
 - **Linux/macOS:** open a terminal, make the script executable, then run it:
   ```bash
   chmod +x run.sh
   ./run.sh
   ```
-  The `run.sh` script (included in the zip) does the same: launches the bot and keeps the terminal open after the bot
-  stops (using `read` on Linux/macOS).
 
 The bot will:
 
@@ -154,17 +152,24 @@ The bot will:
 At the top of `sapp_discord.lua` you can adjust:
 
 ```lua
-local host = "127.0.0.1"     -- bot address (usually loopback)
-local port = 47652           -- bot port, must match a port in config.yml
+local host = "127.0.0.1"     -- Bot's IP address. Use the bot machine's public/private IP if remote.
+local port = 47652           -- Bot port, must match a port in config.yml
+local secret_key = "your-very-secret-key"  -- Must match the secret_key in config.yml
 local auto_connect = true    -- automatically connect on script load
 local reconnect_interval = 5 -- seconds between reconnection attempts
 local max_queue_size = 200   -- maximum message queue size
 ```
 
-If you run multiple Halo servers, give each server's Lua script a different port (e.g., 47652, 47653, ...) and define
-those ports in the bot's `HALO_SERVERS` list.
+- `host`: If the bot runs on a different machine, set this to the bot’s IP address (e.g., `"192.168.1.10"` or a public
+  IP).
+- `secret_key`: **Required for remote connections**. Must be identical to the `secret_key` defined for the corresponding
+  server in `config.yml`.
 
-The script automatically reconnects if the connection drops.
+If you run multiple Halo servers, give each server’s Lua script a different port (e.g., 47652, 47653, ...) and define
+those ports in the bot’s `HALO_SERVERS` list.
+
+The script automatically reconnects if the connection drops and sends an authentication handshake (`AUTH|<secret>`)
+immediately after connecting.
 
 ---
 
@@ -177,22 +182,35 @@ appears on Discord.
 
 A list of game servers the bot should accept connections from. Each server entry has:
 
-- `name` - A name used in logs and the `/game_status` command.
-- `port` - The TCP port this server will connect to (must match the port in its Lua script configuration).
-- `channels` - A mapping of *channel keys* (like `general`, `admin`) to actual Discord channel IDs. These keys are
-  referenced later in `GAME_EVENTS.embeds` to decide where each event type is sent.
+| Field          | Description                                                                                                                                              |
+|----------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `name`         | A name used in logs and the `/game_status` command.                                                                                                      |
+| `port`         | The TCP port this server will connect to (must match the port in its Lua script configuration).                                                          |
+| `bind_address` | (Optional) IP address the bot listens on. Default `"127.0.0.1"`. Use `"0.0.0.0"` to accept connections from any network interface.                       |
+| `secret_key`   | **(Required for remote connections)** A shared secret that the Lua script must send. Keep this secure.                                                   |
+| `allowed_ips`  | (Optional) List of IP addresses or CIDR ranges (e.g., `"203.0.113.0/24"`) allowed to connect. If empty, any IP can connect (but still needs the secret). |
+| `channels`     | A mapping of *channel keys* (like `general`, `admin`) to actual Discord channel IDs. These keys are referenced later in `GAME_EVENTS.embeds`.            |
 
-Example with two servers:
+**Example with two servers, one local and one remote:**
 
 ```yaml
 HALO_SERVERS:
-  - name: "Main Server"
+  - name: "Local Server"
     port: 47652
+    bind_address: "127.0.0.1"
+    secret_key: ""                     # No secret required for localhost
+    allowed_ips: [ ]                   # Not needed
     channels:
       general: "1264839502716843950"
       admin: "9081743625517409283"
-  - name: "Secondary Server"
+
+  - name: "Remote VPS Server"
     port: 47653
+    bind_address: "0.0.0.0"           # Listen on all interfaces
+    secret_key: "super-secret-123"    # Must match the key in sapp_discord.lua
+    allowed_ips:
+      - "203.0.113.45"                # Your VPS public IP
+      - "192.168.1.0/24"              # Optional: allow local subnet
     channels:
       general: "4739201864405713928"
       admin: "6813572049931847261"
@@ -239,7 +257,7 @@ actual value from the game event. Common keys:
 - `{msg}` - chat message
 - `{map}` - current map name
 - `{gt}` - game type (e.g., CTF, Slayer)
-- `{ffa}` - "yes" or "no" for free-for-all
+- `{ffa}` - "true" or "false" for free-for-all
 - `{team}` - team name (Red, Blue, etc.)
 - `{score}` - player's score
 - `{killer_name}` - name of the killer
@@ -393,7 +411,7 @@ This runs `sv_map_next` only on the server named "Main Server".
 
 ## Protocol Specification
 
-Events are sent as plain text lines with the format:
+The bot uses a plain‑text TCP protocol. Events are sent as lines with the format:
 
 ```
 event_type|key1=value1|key2=value2|...|timestamp=unix_seconds
@@ -401,7 +419,17 @@ event_type|key1=value1|key2=value2|...|timestamp=unix_seconds
 
 Special characters are escaped: `|` → `\|`, newline → `\n`, carriage return → `\r`.
 
-Example:  
+**Authentication handshake** (required if `secret_key` is set in `config.yml`):  
+Immediately after connecting, the Lua script sends:
+
+```
+AUTH|<secret_key>\n
+```
+
+If the secret matches, the bot replies `AUTH_OK\n` and then accepts normal events. If authentication fails, the
+connection is closed.
+
+Example of a normal event line after authentication:  
 `event_chat|name=Player1|msg=Hello world|timestamp=1700000000`
 
 The bot parses these lines and builds Discord embeds according to `config.yml`.
@@ -413,3 +441,4 @@ The bot parses these lines and builds Discord embeds according to `config.yml`.
 ## License
 
 Copyright (c) 2026 Jericho Crosby (Chalwk). See the [LICENSE](LICENSE) file for details.
+

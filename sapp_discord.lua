@@ -17,11 +17,12 @@ Copyright (c) 2026 Jericho Crosby (Chalwk)
 -- CONFIG START --
 api_version = '1.12.0.0'
 
-local host = "127.0.0.1"     -- bot address (usually loopback)
-local port = 47652           -- bot port, must match a port in config.yml
-local auto_connect = true    -- automatically connect on script load
-local reconnect_interval = 5 -- seconds between reconnection attempts
-local max_queue_size = 200   -- maximum message queue size
+local host = "127.0.0.1"                  -- bot address (use public IP if remote)
+local port = 47652                        -- bot port, must match a port in config.yml
+local secret_key = "your-very-secret-key" -- MUST match secret_key in config.yml
+local auto_connect = true                 -- automatically connect on script load
+local reconnect_interval = 5              -- seconds between reconnection attempts
+local max_queue_size = 200                -- maximum message queue size
 -- CONFIG END --
 
 local concat = table.concat
@@ -90,6 +91,7 @@ local PIRATED_HASHES = {
 local socket_lib
 local sock = nil
 local is_connected = false
+local authenticated = false
 local reconnect_timer_active = false
 local message_queue = {}
 local incoming_buffer = ""
@@ -124,6 +126,33 @@ function OnReconnect()
 
     reconnect_timer_active = false
     return false
+end
+
+-- Close the current connection and reset state.
+local function disconnect()
+    reconnect_timer_active = false
+    authenticated = false
+    if sock then
+        pcall(sock.close, sock)
+        sock = nil
+    end
+    is_connected = false
+    cprint("[HaloDiscordBot] Disconnected")
+end
+
+-- Send authentication line after connection
+local function send_auth()
+    if not sock then return false end
+    local auth_line = "AUTH|" .. secret_key .. "\n"
+    local bytes, err = sock:send(auth_line)
+    if bytes then
+        cprint("[HaloDiscordBot] Authentication sent")
+        authenticated = true
+        return true
+    else
+        cprint("[HaloDiscordBot] Failed to send authentication: " .. tostring(err))
+        return false
+    end
 end
 
 -- Establish a TCP connection to the Discord bot.
@@ -168,6 +197,13 @@ function connect_to_bot(target_host, target_port)
     is_connected = true
     cprint("[HaloDiscordBot] Connected to " .. target_host .. ":" .. target_port)
 
+    -- Send authentication immediately
+    if not send_auth() then
+        disconnect()
+        schedule_reconnect()
+        return false
+    end
+
     timer(1000, "OnPollIncoming")
 
     if #message_queue > 0 then
@@ -195,22 +231,11 @@ function connect_to_bot(target_host, target_port)
     return true
 end
 
--- Close the current connection and reset state.
-local function disconnect()
-    reconnect_timer_active = false
-    if sock then
-        pcall(sock.close, sock)
-        sock = nil
-    end
-    is_connected = false
-    cprint("[HaloDiscordBot] Disconnected")
-end
-
 -- Send raw data over the socket. If disconnected, queue the message.
 -- data: string to send.
 -- Returns true if sent immediately, false if queued or error.
 local function send_data(data)
-    if not is_connected then
+    if not is_connected or not authenticated then
         table_insert(message_queue, data)
         if #message_queue > max_queue_size then
             table_remove(message_queue, 1)
@@ -220,8 +245,8 @@ local function send_data(data)
     end
 
     if not sock then
-        -- Should not happen if is_connected is true, but guard anyway!
         is_connected = false
+        authenticated = false
         table_insert(message_queue, data)
         if #message_queue > max_queue_size then
             table_remove(message_queue, 1)
@@ -234,6 +259,7 @@ local function send_data(data)
     if not bytes then
         cprint("[HaloDiscordBot] Send error: " .. tostring(err))
         is_connected = false
+        authenticated = false
         pcall(sock.close, sock)
         sock = nil
         table_insert(message_queue, data)
@@ -256,31 +282,41 @@ local function process_buffer()
 
         line = line:gsub("\r$", "")
 
-        local say_pos = line:find("say_all ")
-        if say_pos then
-            local msg = line:sub(say_pos + 8)
-            say_all(msg)
-            cprint("[HaloDiscordBot] Received from Discord: " .. msg)
-        elseif line:find("^exec ") then
-            local cmd = line:sub(6)
-            local parts = {}
-            for part in cmd:gmatch("%S+") do
-                table_insert(parts, part)
-            end
-            if #parts >= 4 then
-                local reqId = parts[1]
-                local playerIndex = tonumber(parts[2]) or 0
-                local echo = parts[3] == "1"
-                local command = concat(parts, " ", 4)
-                cprint("[HaloDiscordBot] Executing command: " .. command)
-                current_request_id = reqId
-                execute_command(command, playerIndex, echo)
-                current_request_id = nil
+        -- Ignore any non-command lines before authentication is confirmed
+        if not authenticated then
+            if line == "AUTH_OK" then
+                cprint("[HaloDiscordBot] Authentication successful")
+                authenticated = true
             else
-                cprint("[HaloDiscordBot] Invalid exec format: " .. line)
+                cprint("[HaloDiscordBot] Unexpected data before auth: " .. line)
             end
-        elseif line ~= "" then
-            cprint("[HaloDiscordBot] Unknown command: " .. line)
+        else
+            local say_pos = line:find("say_all ")
+            if say_pos then
+                local msg = line:sub(say_pos + 8)
+                say_all(msg)
+                cprint("[HaloDiscordBot] Received from Discord: " .. msg)
+            elseif line:find("^exec ") then
+                local cmd = line:sub(6)
+                local parts = {}
+                for part in cmd:gmatch("%S+") do
+                    table_insert(parts, part)
+                end
+                if #parts >= 4 then
+                    local reqId = parts[1]
+                    local playerIndex = tonumber(parts[2]) or 0
+                    local echo = parts[3] == "1"
+                    local command = concat(parts, " ", 4)
+                    cprint("[HaloDiscordBot] Executing command: " .. command)
+                    current_request_id = reqId
+                    execute_command(command, playerIndex, echo)
+                    current_request_id = nil
+                else
+                    cprint("[HaloDiscordBot] Invalid exec format: " .. line)
+                end
+            elseif line ~= "" then
+                cprint("[HaloDiscordBot] Unknown command: " .. line)
+            end
         end
     end
 end

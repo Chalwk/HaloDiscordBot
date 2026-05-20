@@ -4,6 +4,11 @@
 HALO_SERVERS:
   - name: "DEV SERVER"
     port: 47652
+    bind_address: "0.0.0.0"
+    secret_key: "your-very-secret-key"
+    allowed_ips:
+      - "192.168.1.100"
+      - "203.0.113.0/24"
     channels:
       general: "1504095256184881163"
       admin: "1504095321918275765"
