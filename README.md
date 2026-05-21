@@ -7,7 +7,7 @@ forwarding in-game events as rich Discord embeds. Supports SAPP only.
 
 * [Features](#features)
 * [Requirements](#requirements)
-* [Important Notice](#important-notice)
+    * [Port Forwarding](#port-forwarding)
 * [Download](#download)
 * [Installation](#installation)
     * [1. Place Files](#1-place-files)
@@ -49,18 +49,9 @@ forwarding in-game events as rich Discord embeds. Supports SAPP only.
 
 - Java 17+
 - SAPP (10.2.1) with Lua API version "1.11.0.0+"
-- LuaJIT Socket (`ljsocket.lua`) supporting Lua
-  5.1 ([CapsAdmin/luajitsocket](https://github.com/CapsAdmin/luajitsocket/blob/master/ljsocket.lua))
+- LuaJIT Socket (`ljsocket.lua`) supporting Lua 5.1 ([CapsAdmin/luajitsocket][ljsocket])
 
----
-
-## Important Notice
-
-> **The bot can now run on a separate machine from your Halo game servers.**  
-> Use the `bind_address`, `secret_key`, and `allowed_ips` settings (see [Configuration](#configuration-file-configyml))
-> to securely accept remote connections.
-
-### Port Forwarding (when bot and game server are on different machines)
+### Port Forwarding
 
 If your Java bot runs on a different machine (e.g., your home PC) and the Halo SAPP server is on a remote VPS or another
 network, you must:
@@ -84,7 +75,7 @@ The latest stable version is packaged as a zip file containing:
 - `run.sh` - Linux/macOS launcher script (optional)
 - `sapp_discord.lua` - Lua script for SAPP servers
 
-[![Download Latest Release](https://img.shields.io/badge/Download-Latest%20Release-brightgreen?logo=github&logoColor=white)](https://github.com/Chalwk/HaloDiscordBot/releases/latest)
+[![Download Latest Release][latest_release_shield]][latest_release_link]
 
 **How to download:**
 
@@ -111,14 +102,14 @@ in both the Lua script and `config.yml`).
 
 > [!IMPORTANT]
 > The SAPP Lua script requires `ljsocket.lua`
-> from [CapsAdmin/luajitsocket](https://github.com/CapsAdmin/luajitsocket/blob/master/ljsocket.lua). Place it in your
+> from [CapsAdmin/luajitsocket][ljsocket]. Place it in your
 > game server's root directory.
 
 ### 2. Discord Setup
 
 > [!IMPORTANT]
 > The bot requires the environment variable `HALO_DISCORD_BOT_TOKEN`. Get a token from
-> the [Discord Developer Portal](https://discord.com/developers/applications/).
+> the [Discord Developer Portal][discord_developer_portal].
 
 - **Windows:** Press Windows key, type `environment`, select *Edit the system environment variables* → *Environment
   Variables* → *New*. Name: `HALO_DISCORD_BOT_TOKEN`, Value: `your-token-here`.
@@ -373,8 +364,6 @@ Shows an ephemeral summary (only visible to you) for each configured game server
 
 Requires `ADMINISTRATOR` permission by default (configurable).
 
----
-
 ### `/halo`
 
 Executes any server command directly on a connected Halo server and returns the output as a Discord embed.
@@ -454,3 +443,13 @@ The bot parses these lines and builds Discord embeds according to `config.yml`.
 ## License
 
 Copyright (c) 2026 Jericho Crosby (Chalwk). See the [LICENSE](LICENSE) file for details.
+
+---
+
+[ljsocket]: https://github.com/CapsAdmin/luajitsocket/blob/master/ljsocket.lua
+
+[latest_release_link]: https://github.com/Chalwk/HaloDiscordBot/releases/latest
+
+[latest_release_shield]: https://img.shields.io/badge/Download-Latest%20Release-brightgreen?logo=github&logoColor=white
+
+[discord_developer_portal]: https://discord.com/developers/applications/
