@@ -60,6 +60,18 @@ forwarding in-game events as rich Discord embeds. Supports SAPP only.
 > Use the `bind_address`, `secret_key`, and `allowed_ips` settings (see [Configuration](#configuration-file-configyml))
 > to securely accept remote connections.
 
+### Port Forwarding (when bot and game server are on different machines)
+
+If your Java bot runs on a different machine (e.g., your home PC) and the Halo SAPP server is on a remote VPS or another
+network, you must:
+
+- **Forward the TCP port** (e.g., `47652`) from your bot machine's router to the bot machine's local IP address.
+- **Add the game server's public IP** to the `allowed_ips` list in `config.yml` for that server's entry.
+- Set `bind_address: "0.0.0.0"` in `config.yml` so the bot listens on all network interfaces.
+- In the Lua script (`sapp_discord.lua`), set `host` to your bot machine's **public IP**.
+
+Without port forwarding, the remote game server cannot establish a TCP connection to the bot.
+
 ---
 
 ## Download
@@ -99,8 +111,8 @@ in both the Lua script and `config.yml`).
 
 > [!IMPORTANT]
 > The SAPP Lua script requires `ljsocket.lua`
-> from [CapsAdmin/luajitsocket](https://github.com/CapsAdmin/luajitsocket/blob/master/ljsocket.lua). Place it in your game
-> server's root directory.
+> from [CapsAdmin/luajitsocket](https://github.com/CapsAdmin/luajitsocket/blob/master/ljsocket.lua). Place it in your
+> game server's root directory.
 
 ### 2. Discord Setup
 
@@ -132,7 +144,8 @@ java -jar HaloDiscordBot.jar
 
 **Alternatively, use the provided launcher scripts:**
 
-- **Windows:** double-click `run.bat`. The batch file simplifies the process and keeps the terminal window open after the bot stops.
+- **Windows:** double-click `run.bat`. The batch file simplifies the process and keeps the terminal window open after
+  the bot stops.
 - **Linux/macOS:** open a terminal, make the script executable, then run it:
   ```bash
   chmod +x run.sh
@@ -160,13 +173,13 @@ local reconnect_interval = 5 -- seconds between reconnection attempts
 local max_queue_size = 200   -- maximum message queue size
 ```
 
-- `host`: If the bot runs on a different machine, set this to the bot’s IP address (e.g., `"192.168.1.10"` or a public
+- `host`: If the bot runs on a different machine, set this to the bot's IP address (e.g., `"192.168.1.10"` or a public
   IP).
 - `secret_key`: **Required for remote connections**. Must be identical to the `secret_key` defined for the corresponding
   server in `config.yml`.
 
-If you run multiple Halo servers, give each server’s Lua script a different port (e.g., 47652, 47653, ...) and define
-those ports in the bot’s `HALO_SERVERS` list.
+If you run multiple Halo servers, give each server's Lua script a different port (e.g., 47652, 47653, ...) and define
+those ports in the bot's `HALO_SERVERS` list.
 
 The script automatically reconnects if the connection drops and sends an authentication handshake (`AUTH|<secret>`)
 immediately after connecting.
@@ -356,7 +369,7 @@ Shows an ephemeral summary (only visible to you) for each configured game server
 - TCP client connected – whether a game server is currently connected
 - Events processed – total events received from that server since bot start
 - Last event – timestamp of the most recent event from that server
-- Uptime – how long that server’s connection processor has been running
+- Uptime – how long that server's connection processor has been running
 
 Requires `ADMINISTRATOR` permission by default (configurable).
 
@@ -441,4 +454,3 @@ The bot parses these lines and builds Discord embeds according to `config.yml`.
 ## License
 
 Copyright (c) 2026 Jericho Crosby (Chalwk). See the [LICENSE](LICENSE) file for details.
-
