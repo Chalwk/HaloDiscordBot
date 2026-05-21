@@ -192,6 +192,10 @@ public class GameEventProcessor {
             eb.setDescription("```\n" + data + "\n```");
         }
 
+        if (config.showServerName()) {
+            eb.setFooter(serverName);
+        }
+
         return eb;
     }
 

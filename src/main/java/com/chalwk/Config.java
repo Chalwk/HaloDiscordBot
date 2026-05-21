@@ -19,15 +19,27 @@ public class Config {
     private final Map<String, Object> data;
     private final Map<String, EventEmbedConfig> eventEmbedConfigs = new HashMap<>();
     private final Map<String, HaloServerConfig> serverConfigs = new HashMap<>();
+    private boolean showServerName = true;
 
     public Config() {
         try (InputStream input = new FileInputStream("config.yml")) {
             Yaml yaml = new Yaml();
             data = yaml.load(input);
+            loadShowServerName();
             loadEventEmbedConfigs();
             loadHaloServers();
         } catch (Exception e) {
             throw new RuntimeException("Failed to load config.yml", e);
+        }
+    }
+
+    private void loadShowServerName() {
+        Object gameEvents = data.get("GAME_EVENTS");
+        if (gameEvents instanceof Map) {
+            Object val = ((Map<?, ?>) gameEvents).get("show_server_name");
+            if (val instanceof Boolean) {
+                showServerName = (Boolean) val;
+            }
         }
     }
 
@@ -166,6 +178,10 @@ public class Config {
 
     public String getDiscordBotToken() {
         return System.getenv("HALO_DISCORD_BOT_TOKEN");
+    }
+
+    public boolean showServerName() {
+        return showServerName;
     }
 
     public record HaloServerConfig(String name, int port, String bindAddress, String secretKey,

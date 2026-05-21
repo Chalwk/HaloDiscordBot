@@ -18,6 +18,9 @@ COMMAND_PERMISSIONS:
   halo: "ADMINISTRATOR"
 
 GAME_EVENTS:
+
+  show_server_name: true
+
   embeds:
 
     event_chat:

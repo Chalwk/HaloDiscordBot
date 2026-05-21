@@ -242,15 +242,16 @@ each block (e.g., `event_chat`) must match the event type sent by the Lua script
 
 Each event block can have these fields:
 
-| Field         | Description                                                                                                                                                                            |
-|---------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `enabled`     | `true` or `false`. If `false`, the event is ignored.                                                                                                                                   |
-| `channel`     | A *channel key* that must exist in the server's `channels` mapping (inside `HALO_SERVERS`). The bot sends the embed to that Discord channel.                                           |
-| `title`       | The embed's title. You can use placeholders like `{name}`.                                                                                                                             |
-| `color`       | A Discord color name (e.g., `RED`, `BLUE`, `GREEN`, `MAGENTA`) or a hex code like `#FFAA00`.                                                                                           |
-| `description` | The embed's main text. Supports placeholders. Ignored if `fields` is used.                                                                                                             |
-| `type`        | A map of subtype numbers to custom descriptions. Used for events that have multiple variants, like `event_death` (different death types) or `event_score` (different scoring methods). |
-| `fields`      | A list of embed fields. Each field has `name`, `value`, and `inline` (true/false). If you use `fields`, the `description` field is ignored.                                            |
+| Field              | Description                                                                                                                                                                            |
+|--------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `show_server_name` | `true` or `false`, if the bot adds a footer with the server name on embeds.                                                                                                            |
+| `enabled`          | `true` or `false`. If `false`, the event is ignored.                                                                                                                                   |
+| `channel`          | A *channel key* that must exist in the server's `channels` mapping (inside `HALO_SERVERS`). The bot sends the embed to that Discord channel.                                           |
+| `title`            | The embed's title. You can use placeholders like `{name}`.                                                                                                                             |
+| `color`            | A Discord color name (e.g., `RED`, `BLUE`, `GREEN`, `MAGENTA`) or a hex code like `#FFAA00`.                                                                                           |
+| `description`      | The embed's main text. Supports placeholders. Ignored if `fields` is used.                                                                                                             |
+| `type`             | A map of subtype numbers to custom descriptions. Used for events that have multiple variants, like `event_death` (different death types) or `event_score` (different scoring methods). |
+| `fields`           | A list of embed fields. Each field has `name`, `value`, and `inline` (true/false). If you use `fields`, the `description` field is ignored.                                            |
 
 #### Placeholders
 
