@@ -1,5 +1,7 @@
 # HaloDiscordBot
 
+<img src="logo.png" alt="logo" width="200">
+
 A Java application using [JDA](https://github.com/discord-jda/JDA) that connects multiple Halo servers to Discord,
 forwarding in-game events as rich Discord embeds. Supports SAPP only.
 
