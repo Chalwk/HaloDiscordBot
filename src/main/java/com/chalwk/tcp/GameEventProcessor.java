@@ -192,7 +192,8 @@ public class GameEventProcessor {
             eb.setDescription("```\n" + data + "\n```");
         }
 
-        if (config.showServerName()) {
+        // Only add server name footer if this event type requests it
+        if (embedConfig.showServerName()) {
             eb.setFooter(serverName);
         }
 

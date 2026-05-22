@@ -281,6 +281,7 @@ Click on each example to expand.
 ```yaml
 event_chat:
   enabled: true
+  show_server_name: false
   channel: "general"
   title: " "
   color: "WHITE"
@@ -298,13 +299,21 @@ player name and message.
 ```yaml
 event_death:
   enabled: true
+  show_server_name: false
   channel: "general"
   title: " "
-  color: "RED"
+  color: "DARK_PURPLE"
   type:
-    1: "**☠️ Death:** {killer_name} drew first blood on {victim_name}"
-    4: "**☠️ Death:** {victim_name} was killed by {killer_name}"
-    5: "**☠️ Death:** {victim_name} committed suicide"
+    1: "**☠️ Death:** `{killer_name}` drew first blood on `{victim_name}`"
+    2: "**☠️ Death:** `{victim_name}` was killed from the grave by `{killer_name}`"
+    3: "**☠️ Death:** `{victim_name}` was run over by `{killer_name}`"
+    4: "**☠️ Death:** `{victim_name}` was killed by `{killer_name}`"
+    5: "**☠️ Death:** `{victim_name}` committed suicide"
+    6: "**☠️ Death:** `{victim_name}` was betrayed by `{killer_name}`"
+    7: "**☠️ Death:** `{victim_name}` was squashed by a vehicle"
+    8: "**☠️ Death:** `{victim_name}` fell to their death"
+    9: "**☠️ Death:** `{victim_name}` was killed by the server"
+    10: "**☠️ Death:** `{victim_name}` died"
 ```
 
 The Lua script sends a `subtype` number (e.g., 1, 4, 5). The bot picks the matching message. If a subtype is not listed,
@@ -318,6 +327,7 @@ the event uses the `description` field (or does nothing if `description` is miss
 ```yaml
 event_score:
   enabled: true
+  show_server_name: false
   channel: "general"
   title: "Score Update"
   color: "YELLOW"
