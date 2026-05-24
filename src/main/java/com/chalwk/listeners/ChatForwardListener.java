@@ -4,6 +4,7 @@ package com.chalwk.listeners;
 
 import com.chalwk.Config;
 import com.chalwk.tcp.GameEventProcessor;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
@@ -39,7 +40,16 @@ public class ChatForwardListener extends ListenerAdapter {
         List<Config.HaloServerConfig> targetServers = channelToServers.get(channelId);
         if (targetServers == null || targetServers.isEmpty()) return;
 
-        String author = event.getAuthor().getName();
+        // String author = event.getAuthor().getName();
+        String author;
+        Member member = event.getMember();
+        if (member != null) {
+            author = member.getEffectiveName();  // guild nickname or username
+        } else {
+            author = event.getAuthor().getGlobalName();
+            if (author == null) author = event.getAuthor().getName();
+        }
+
         String content = event.getMessage().getContentDisplay();
 
         for (Config.HaloServerConfig server : targetServers) {
