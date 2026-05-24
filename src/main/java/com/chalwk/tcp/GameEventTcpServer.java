@@ -135,20 +135,19 @@ public class GameEventTcpServer {
                 }
             }
 
-            // If we reach here, the client is either authenticated or no secret was required
             activeWriter.set(writer);
             String line;
             while ((line = reader.readLine()) != null) {
                 if (line.isBlank()) continue;
                 processor.processEvent(line);
             }
+            LoggerUtil.info("[{}] Client disconnected", serverName);
         } catch (java.net.SocketException e) {
             LoggerUtil.info("[{}] Client disconnected ({}).", serverName, e.getMessage());
         } catch (Exception e) {
             LoggerUtil.error("[{}] Client connection error: {}", serverName, e.getMessage(), e);
         } finally {
             activeWriter.set(null);
-            LoggerUtil.info("[{}] Client disconnected", serverName);
             processor.setHasConnectedClient(false);
         }
     }
