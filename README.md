@@ -74,11 +74,12 @@ Without port forwarding, the remote game server cannot establish a TCP connectio
 
 The latest stable version is packaged as a zip file containing:
 
-- `HaloDiscordBot.jar` - the main bot application
-- `config.yml` - configuration file (edit before running)
+- `HaloDiscordBot.jar` - the main bot application (required)
+- `config.yml` - configuration file (required, edit before running)
 - `run.bat` - Windows launcher script (optional)
 - `run.sh` - Linux/macOS launcher script (optional)
-- `sapp_discord.lua` - Lua script for SAPP servers
+- `sapp_discord.lua` - Lua script for SAPP servers (required)
+- `ljsocket.lua` - LuaJit Socket (required)
 
 [![Download Latest Release][latest_release_shield]][latest_release_link]
 
