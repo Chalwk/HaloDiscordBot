@@ -21,12 +21,12 @@ Copyright (c) 2026 Jericho Crosby (Chalwk)
 -- CONFIG START --
 api_version = '1.12.0.0'
 
-local host = "127.0.0.1"     -- bot address (use public IP if remote)
-local port = 47652           -- bot port, must match a port in config.yml
-local secret_key = ""        -- MUST match secret_key in config.yml
-local auto_connect = true    -- automatically connect on script load
-local reconnect_interval = 5 -- seconds between reconnection attempts
-local max_queue_size = 200   -- maximum message queue size
+local host = "127.0.0.1"                        -- bot address (use public IP if remote)
+local port = 47652                              -- bot port, must match a port in config.yml
+local secret_key = "your-very-secret-key"       -- MUST match secret_key in config.yml
+local auto_connect = true                       -- automatically connect on script load
+local reconnect_interval = 5                    -- seconds between reconnection attempts
+local max_queue_size = 200                      -- maximum message queue size
 -- CONFIG END --
 
 local concat = table.concat
