@@ -7,7 +7,11 @@ DESCRIPTION:      Logs Halo server events using LuaJitSocket TCP.
                   1. HaloDiscordBot needs to be installed and running.
                      https://github.com/Chalwk/HaloDiscordBot
 
-                  2. LuaJIT Socket supporting Lua 5.1
+                  2. A modified version of LuaJIT Socket (ljsocket.lua) is included
+                     in the HaloDiscordBot repository.
+                     https://github.com/Chalwk/HaloDiscordBot/blob/main/ljsocket.lua
+
+                     Original library by Elias Hogstvedt (MIT License):
                      https://github.com/CapsAdmin/luajitsocket/blob/master/ljsocket.lua
 
 Copyright (c) 2026 Jericho Crosby (Chalwk)
@@ -17,12 +21,12 @@ Copyright (c) 2026 Jericho Crosby (Chalwk)
 -- CONFIG START --
 api_version = '1.12.0.0'
 
-local host = "127.0.0.1"                  -- bot address (use public IP if remote)
-local port = 47652                        -- bot port, must match a port in config.yml
-local secret_key = "your-very-secret-key" -- MUST match secret_key in config.yml
-local auto_connect = true                 -- automatically connect on script load
-local reconnect_interval = 5              -- seconds between reconnection attempts
-local max_queue_size = 200                -- maximum message queue size
+local host = "127.0.0.1"     -- bot address (use public IP if remote)
+local port = 47652           -- bot port, must match a port in config.yml
+local secret_key = ""        -- MUST match secret_key in config.yml
+local auto_connect = true    -- automatically connect on script load
+local reconnect_interval = 5 -- seconds between reconnection attempts
+local max_queue_size = 200   -- maximum message queue size
 -- CONFIG END --
 
 local concat = table.concat
@@ -161,72 +165,81 @@ function connect_to_bot(target_host, target_port)
         cprint("[HaloDiscordBot] LuaJitSocket not loaded")
         return false
     end
-    if sock then
-        pcall(sock.close, sock)
-        sock = nil
-    end
 
-    local s = socket_lib.create("inet", "stream", "tcp")
-    if not s then
-        cprint("[HaloDiscordBot] socket.create failed")
-        return false
-    end
+    local ok, result = pcall(function()
+        if sock then
+            pcall(sock.close, sock)
+            sock = nil
+        end
 
-    s:set_blocking(false)
+        local s = socket_lib.create("inet", "stream", "tcp")
+        if not s then
+            error("socket.create failed")
+        end
 
-    local res, err, num = s:connect(target_host, tostring(target_port))
-    if not res then
-        s:close()
-        cprint("[HaloDiscordBot] Connection to " .. target_host .. ":" .. target_port .. " failed: " .. tostring(err))
-        return false
-    end
+        s:set_blocking(false)
 
-    if res == true then
-        local poll_result, poll_err = s:poll(5000, "out")
-        if not poll_result or not poll_result.out then
+        local res, err, num = s:connect(target_host, tostring(target_port))
+        if not res then
             s:close()
-            cprint("[HaloDiscordBot] Connection to " .. target_host .. ":" .. target_port .. " timed out")
-            return false
+            error("connect failed: " .. tostring(err) .. " (code " .. tostring(num) .. ")")
         end
-    end
 
-    s:set_blocking(true)
-    s:set_option("sndtimeo", 1000)
+        -- If connect returned true immediately, poll for writability
+        if res == true then
+            local poll_result, poll_err = s:poll(5000, "out")
+            if not poll_result or not poll_result.out then
+                s:close()
+                error("poll timeout or error: " .. tostring(poll_err))
+            end
+        end
 
-    sock = s
-    is_connected = true
-    cprint("[HaloDiscordBot] Connected to " .. target_host .. ":" .. target_port)
+        s:set_blocking(true)
+        local ok_set, err_set = s:set_option("sndtimeo", 1000)
+        if not ok_set then
+            s:close()
+            error("set_option(sndtimeo) failed: " .. tostring(err_set))
+        end
 
-    -- Send authentication immediately
-    if not send_auth() then
+        sock = s
+        is_connected = true
+        cprint("[HaloDiscordBot] Connected to " .. target_host .. ":" .. target_port)
+
+        if not send_auth() then
+            error("authentication failed")
+        end
+
+        timer(1000, "OnPollIncoming")
+
+        -- Flush queued messages
+        if #message_queue > 0 then
+            local sent = 0
+            for _, msg in ipairs(message_queue) do
+                local bytes, err_send = s:send(msg)
+                if not bytes then
+                    cprint("[HaloDiscordBot] Queue send error: " .. tostring(err_send))
+                    break
+                end
+                sent = sent + 1
+            end
+            if sent > 0 then
+                for i = 1, #message_queue - sent do
+                    message_queue[i] = message_queue[i + sent]
+                end
+                for i = #message_queue - sent + 1, #message_queue do
+                    message_queue[i] = nil
+                end
+            end
+        end
+
+        return true
+    end)
+
+    if not ok then
+        cprint("[HaloDiscordBot] Connection error: " .. tostring(result))
         disconnect()
-        schedule_reconnect()
+        if auto_connect then schedule_reconnect() end
         return false
-    end
-
-    timer(1000, "OnPollIncoming")
-
-    if #message_queue > 0 then
-        local count = 0
-        for _, msg in ipairs(message_queue) do
-            local bytes, _err = s:send(msg)
-            if not bytes then
-                cprint("[HaloDiscordBot] Queue send error: " .. tostring(_err))
-                break
-            end
-            count = count + 1
-        end
-
-        if count > 0 then
-            local q = message_queue
-            local len = #q
-            for i = 1, len - count do
-                q[i] = q[i + count]
-            end
-            for i = len - count + 1, len do
-                q[i] = nil
-            end
-        end
     end
     return true
 end

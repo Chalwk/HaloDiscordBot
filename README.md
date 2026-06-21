@@ -27,6 +27,8 @@ forwarding in-game events as rich Discord embeds. Supports SAPP only.
     * [`/halo`](#halo)
 * [Protocol Specification](#protocol-specification)
 * [License](#license)
+*
+    * [Third-Party Licenses](#third-party-licenses)
 
 ---
 
@@ -51,7 +53,8 @@ forwarding in-game events as rich Discord embeds. Supports SAPP only.
 
 - Java 17+
 - SAPP (10.2.1) with Lua API version "1.11.0.0+"
-- LuaJIT Socket (`ljsocket.lua`) supporting Lua 5.1 ([CapsAdmin/luajitsocket][ljsocket])
+- A modified version of LuaJIT Socket (`ljsocket.lua`) based on [CapsAdmin/luajitsocket][ljsocket]. The modified version
+  is included in this repository.
 
 ### Port Forwarding
 
@@ -103,9 +106,8 @@ For multiple servers, place the Lua script in each server's script folder and us
 in both the Lua script and `config.yml`).
 
 > [!IMPORTANT]
-> The SAPP Lua script requires `ljsocket.lua`
-> from [CapsAdmin/luajitsocket][ljsocket]. Place it in your
-> game server's root directory.
+> The SAPP Lua script requires `ljsocket.lua` from [CapsAdmin/luajitsocket][ljsocket]. Place it in your game server's
+> root directory.
 
 ### 2. Discord Setup
 
@@ -456,6 +458,14 @@ The bot parses these lines and builds Discord embeds according to `config.yml`.
 ## License
 
 Copyright (c) 2026 Jericho Crosby (Chalwk). See the [LICENSE](LICENSE) file for details.
+
+## Third-Party Licenses
+
+This project includes the following third-party software:
+
+* **ljsocket.lua** - Copyright (c) 2022 Elias Hogstvedt. Licensed under the MIT License. The original source code can be
+  found at [CapsAdmin/luajitsocket](https://github.com/CapsAdmin/luajitsocket). This version has been modified for use
+  in HaloDiscordBot.
 
 ---
 
