@@ -40,6 +40,7 @@ jobs:
           cp build/libs/HaloDiscordBot.jar release-package/
           cp config.yml release-package/
           cp sapp_discord.lua release-package/
+          cp ljsocket.lua release-package/
 
       - name: Create run.bat
         run: |
