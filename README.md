@@ -53,8 +53,8 @@ forwarding in-game events as rich Discord embeds. Supports SAPP only.
 
 - Java 17+
 - SAPP (10.2.1) with Lua API version "1.11.0.0+"
-- A modified version of LuaJIT Socket (`ljsocket.lua`) based on [CapsAdmin/luajitsocket][ljsocket]. The modified version
-  is included in this repository.
+- A [modified version of LuaJIT Socket](ljsocket.lua) (`ljsocket.lua`) based on [CapsAdmin/luajitsocket][ljsocket]. The
+  modified version is included in this repository.
 
 ### Port Forwarding
 
