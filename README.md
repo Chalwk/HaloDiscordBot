@@ -106,10 +106,6 @@ Place `sapp_discord.lua` inside **each Halo server's** `lua` folder.
 For multiple servers, place the Lua script in each server's script folder and use a unique port per server (configured
 in both the Lua script and `config.yml`).
 
-> [!IMPORTANT]
-> The SAPP Lua script requires `ljsocket.lua` from [CapsAdmin/luajitsocket][ljsocket]. Place it in your game server's
-> root directory.
-
 ### 2. Discord Setup
 
 > [!IMPORTANT]
