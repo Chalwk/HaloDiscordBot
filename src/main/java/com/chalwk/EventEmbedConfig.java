@@ -7,10 +7,10 @@ import java.util.List;
 import java.util.Map;
 
 public record EventEmbedConfig(boolean enabled, String title, Color color, String description,
-                               List<FieldConfig> fields,
-                               Map<Integer, String> typeDescriptions,
-                               String channelKey,
-                               boolean showServerName) {
+        List<FieldConfig> fields,
+        Map<Integer, String> typeDescriptions,
+        String channelKey,
+        boolean showServerName) {
 
     public record FieldConfig(String name, String value, boolean inline) {
     }

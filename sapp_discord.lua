@@ -21,12 +21,12 @@ Copyright (c) 2026 Jericho Crosby (Chalwk)
 -- CONFIG START --
 api_version = '1.12.0.0'
 
-local host = "127.0.0.1"                        -- bot address (use public IP if remote)
-local port = 47652                              -- bot port, must match a port in config.yml
-local secret_key = "your-very-secret-key"       -- MUST match secret_key in config.yml
-local auto_connect = true                       -- automatically connect on script load
-local reconnect_interval = 5                    -- seconds between reconnection attempts
-local max_queue_size = 200                      -- maximum message queue size
+local host = "127.0.0.1"                  -- bot address (use public IP if remote)
+local port = 47652                        -- bot port, must match a port in config.yml
+local secret_key = "your-very-secret-key" -- MUST match secret_key in config.yml
+local auto_connect = true                 -- automatically connect on script load
+local reconnect_interval = 5              -- seconds between reconnection attempts
+local max_queue_size = 200                -- maximum message queue size
 -- CONFIG END --
 
 local concat = table.concat
@@ -126,6 +126,7 @@ function OnReconnect()
     cprint("[HaloDiscordBot] Attempting reconnection...")
     connect_to_bot(host, port)
 
+    ---@diagnostic disable-next-line: unnecessary-if
     if not is_connected then return true end
 
     reconnect_timer_active = false
@@ -136,6 +137,7 @@ end
 local function disconnect()
     reconnect_timer_active = false
     authenticated = false
+    ---@diagnostic disable-next-line: unnecessary-if
     if sock then
         pcall(sock.close, sock)
         sock = nil
@@ -166,7 +168,8 @@ function connect_to_bot(target_host, target_port)
         return false
     end
 
-    local ok, result = pcall(function()
+    local ok, result = pcall(function ()
+        ---@diagnostic disable-next-line: unnecessary-if
         if sock then
             pcall(sock.close, sock)
             sock = nil
@@ -238,6 +241,7 @@ function connect_to_bot(target_host, target_port)
     if not ok then
         cprint("[HaloDiscordBot] Connection error: " .. tostring(result))
         disconnect()
+        ---@diagnostic disable-next-line: unnecessary-if
         if auto_connect then schedule_reconnect() end
         return false
     end
@@ -253,6 +257,7 @@ local function send_data(data)
         if #message_queue > max_queue_size then
             table_remove(message_queue, 1)
         end
+        ---@diagnostic disable-next-line: unnecessary-if
         if auto_connect then schedule_reconnect() end
         return false
     end
@@ -264,6 +269,7 @@ local function send_data(data)
         if #message_queue > max_queue_size then
             table_remove(message_queue, 1)
         end
+        ---@diagnostic disable-next-line: unnecessary-if
         if auto_connect then schedule_reconnect() end
         return false
     end
@@ -279,6 +285,7 @@ local function send_data(data)
         if #message_queue > max_queue_size then
             table_remove(message_queue, 1)
         end
+        ---@diagnostic disable-next-line: unnecessary-if
         if auto_connect then schedule_reconnect() end
         return false
     end
@@ -356,10 +363,12 @@ function OnPollIncoming()
     elseif err == "closed" then
         cprint("[HaloDiscordBot] Connection closed by remote host")
         disconnect()
+        ---@diagnostic disable-next-line: unnecessary-if
         if auto_connect then schedule_reconnect() end
     elseif err ~= "timeout" and err ~= "tryagain" then
         cprint("[HaloDiscordBot] Read error: " .. tostring(err))
         disconnect()
+        ---@diagnostic disable-next-line: unnecessary-if
         if auto_connect then schedule_reconnect() end
     end
 
@@ -415,7 +424,7 @@ local function new_player(id)
 end
 
 local function get_player_data(player, quit)
-    local total = tonumber(get_var(0, '$pn'))
+    local total = tonumber(get_var(0, '$pn')) or 0
     return {
         total = quit and total - 1 or total,
         name = player.name,

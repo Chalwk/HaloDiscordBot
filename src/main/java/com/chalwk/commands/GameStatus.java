@@ -64,7 +64,8 @@ public class GameStatus extends BaseCommand {
         event.replyEmbeds(embed.build()).setEphemeral(true).queue();
     }
 
-    // turns a Duration object into a nice HH:MM:SS string, because nobody wants raw seconds!
+    // turns a Duration object into a nice HH:MM:SS string, because nobody wants raw
+    // seconds!
     private String formatDuration(Duration d) {
         long seconds = d.getSeconds();
         long hours = seconds / 3600;

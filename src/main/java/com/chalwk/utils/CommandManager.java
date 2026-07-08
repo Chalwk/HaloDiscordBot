@@ -27,18 +27,20 @@ public class CommandManager {
 
     public List<CommandData> getCommandDataList() {
         return commands.values().stream()
-                .map(Command::getCommandData)
+                .map(cmd -> cmd.getCommandData())
                 .collect(Collectors.toList());
     }
 
-    // reads COMMAND_PERMISSIONS section from config.yml and maps command names to Discord permissions
+    // reads COMMAND_PERMISSIONS section from config.yml and maps command names to
+    // Discord permissions
     @SuppressWarnings("unchecked")
     public void loadPermissionsFromConfig(String configPath) {
         try (FileInputStream fis = new FileInputStream(configPath)) {
             Yaml yaml = new Yaml();
             Map<String, Object> config = yaml.load(fis);
             Map<String, String> permsMap = (Map<String, String>) config.get("COMMAND_PERMISSIONS");
-            if (permsMap == null) return;
+            if (permsMap == null)
+                return;
 
             for (Map.Entry<String, String> entry : permsMap.entrySet()) {
                 String cmdName = entry.getKey();

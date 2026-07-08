@@ -7,28 +7,32 @@ forwarding in-game events as rich Discord embeds. Supports SAPP only.
 
 ## Table of Contents
 
-* [Features](#features)
-* [Requirements](#requirements)
-    * [Port Forwarding](#port-forwarding)
-* [Download](#download)
-* [Installation](#installation)
-    * [1. Place Files](#1-place-files)
-    * [2. Discord Setup](#2-discord-setup)
-    * [3. Running the Bot](#3-running-the-bot)
-* [Lua Script Configuration](#lua-script-configuration)
-* [Configuration File (`config.yml`)](#configuration-file-configyml)
-    * [`HALO_SERVERS`](#halo_servers)
-    * [`COMMAND_PERMISSIONS`](#command_permissions)
-    * [`GAME_EVENTS.embeds`](#game_eventsembeds)
-        * [Placeholders](#placeholders)
-        * [Examples](#examples)
-* [Slash Commands](#slash-commands)
-    * [`/game_status`](#game_status)
-    * [`/halo`](#halo)
-* [Protocol Specification](#protocol-specification)
-* [License](#license)
-*
-    * [Third-Party Licenses](#third-party-licenses)
+- [HaloDiscordBot](#halodiscordbot)
+  - [Table of Contents](#table-of-contents)
+  - [Features](#features)
+  - [Requirements](#requirements)
+    - [Port Forwarding](#port-forwarding)
+  - [Download](#download)
+  - [Installation](#installation)
+    - [1. Place Files](#1-place-files)
+    - [2. Discord Setup](#2-discord-setup)
+    - [3. Running the Bot](#3-running-the-bot)
+  - [Lua Script Configuration](#lua-script-configuration)
+  - [Configuration File (`config.yml`)](#configuration-file-configyml)
+    - [`HALO_SERVERS`](#halo_servers)
+    - [`COMMAND_PERMISSIONS`](#command_permissions)
+    - [`GAME_EVENTS.embeds`](#game_eventsembeds)
+      - [Placeholders](#placeholders)
+      - [Examples](#examples)
+      - [Linking an event to a channel key](#linking-an-event-to-a-channel-key)
+  - [Slash Commands](#slash-commands)
+    - [`/game_status`](#game_status)
+    - [`/halo`](#halo)
+      - [Parameters](#parameters)
+      - [Examples](#examples-1)
+  - [Protocol Specification](#protocol-specification)
+  - [License](#license)
+  - [Third-Party Licenses](#third-party-licenses)
 
 ---
 
@@ -188,7 +192,7 @@ appears on Discord.
 A list of game servers the bot should accept connections from. Each server entry has:
 
 | Field          | Description                                                                                                                                              |
-|----------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `name`         | A name used in logs and the `/game_status` command.                                                                                                      |
 | `port`         | The TCP port this server will connect to (must match the port in its Lua script configuration).                                                          |
 | `bind_address` | (Optional) IP address the bot listens on. Default `"127.0.0.1"`. Use `"0.0.0.0"` to accept connections from any network interface.                       |
@@ -244,7 +248,7 @@ each block (e.g., `event_chat`) must match the event type sent by the Lua script
 Each event block can have these fields:
 
 | Field              | Description                                                                                                                                                                            |
-|--------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `show_server_name` | `true` or `false`, if the bot adds a footer with the server name on embeds.                                                                                                            |
 | `enabled`          | `true` or `false`. If `false`, the event is ignored.                                                                                                                                   |
 | `channel`          | A *channel key* that must exist in the server's `channels` mapping (inside `HALO_SERVERS`). The bot sends the embed to that Discord channel.                                           |
@@ -383,7 +387,7 @@ Executes any server command directly on a connected Halo server and returns the 
 #### Parameters
 
 | Parameter | Type   | Required | Description                                                                       |
-|-----------|--------|----------|-----------------------------------------------------------------------------------|
+| --------- | ------ | -------- | --------------------------------------------------------------------------------- |
 | `command` | String | Yes      | The server command to run (e.g., `pl`, `map bloodgulch ctf`, `sv_kill`).          |
 | `server`  | String | No*      | Which Halo server to target. *Only shown if you have multiple servers configured. |
 

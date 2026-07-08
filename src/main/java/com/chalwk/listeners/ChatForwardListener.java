@@ -34,20 +34,23 @@ public class ChatForwardListener extends ListenerAdapter {
 
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
-        if (event.getAuthor().isBot()) return;
+        if (event.getAuthor().isBot())
+            return;
 
         String channelId = event.getChannel().getId();
         List<Config.HaloServerConfig> targetServers = channelToServers.get(channelId);
-        if (targetServers == null || targetServers.isEmpty()) return;
+        if (targetServers == null || targetServers.isEmpty())
+            return;
 
         // String author = event.getAuthor().getName();
         String author;
         Member member = event.getMember();
         if (member != null) {
-            author = member.getEffectiveName();  // guild nickname or username
+            author = member.getEffectiveName(); // guild nickname or username
         } else {
             author = event.getAuthor().getGlobalName();
-            if (author == null) author = event.getAuthor().getName();
+            if (author == null)
+                author = event.getAuthor().getName();
         }
 
         String content = event.getMessage().getContentDisplay();

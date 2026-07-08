@@ -25,7 +25,7 @@ public class GameEventTcpServer {
     private final AtomicReference<PrintWriter> activeWriter = new AtomicReference<>();
 
     public GameEventTcpServer(JDA jda, Config config, String serverName, int port,
-                              String bindAddress, String secretKey, java.util.List<String> allowedIps) {
+            String bindAddress, String secretKey, java.util.List<String> allowedIps) {
         this.serverName = serverName;
         this.port = port;
         this.bindAddress = bindAddress == null ? "127.0.0.1" : bindAddress;
@@ -50,13 +50,15 @@ public class GameEventTcpServer {
     }
 
     private boolean isIpAllowed(String ip) {
-        if (allowedIps.isEmpty()) return true;
+        if (allowedIps.isEmpty())
+            return true;
         for (String allowed : allowedIps) {
             if (allowed.contains("/")) {
                 String[] parts = allowed.split("/");
                 String cidrIp = parts[0];
                 int prefix = Integer.parseInt(parts[1]);
-                if (ipMatchesCidr(ip, cidrIp, prefix)) return true;
+                if (ipMatchesCidr(ip, cidrIp, prefix))
+                    return true;
             } else if (allowed.equals(ip)) {
                 return true;
             }
@@ -70,11 +72,13 @@ public class GameEventTcpServer {
             java.net.InetAddress cidr = java.net.InetAddress.getByName(cidrIp);
             byte[] inetBytes = inet.getAddress();
             byte[] cidrBytes = cidr.getAddress();
-            if (inetBytes.length != cidrBytes.length) return false;
+            if (inetBytes.length != cidrBytes.length)
+                return false;
             int fullBytes = prefix / 8;
             int remainingBits = prefix % 8;
             for (int i = 0; i < fullBytes; i++) {
-                if (inetBytes[i] != cidrBytes[i]) return false;
+                if (inetBytes[i] != cidrBytes[i])
+                    return false;
             }
             if (remainingBits > 0) {
                 int mask = 0xFF << (8 - remainingBits);
@@ -96,11 +100,13 @@ public class GameEventTcpServer {
                         Socket clientSocket = serverSocket.accept();
                         String clientIp = clientSocket.getInetAddress().getHostAddress();
                         if (!isIpAllowed(clientIp)) {
-                            LoggerUtil.warn("[{}] Rejected connection from {} (not in allowed_ips)", serverName, clientIp);
+                            LoggerUtil.warn("[{}] Rejected connection from {} (not in allowed_ips)", serverName,
+                                    clientIp);
                             clientSocket.close();
                             continue;
                         }
-                        LoggerUtil.info("[{}] New connection from {}", serverName, clientSocket.getRemoteSocketAddress());
+                        LoggerUtil.info("[{}] New connection from {}", serverName,
+                                clientSocket.getRemoteSocketAddress());
                         processor.setHasConnectedClient(true);
                         new Thread(() -> handleClient(clientSocket)).start();
                     }
@@ -113,8 +119,8 @@ public class GameEventTcpServer {
 
     private void handleClient(Socket socket) {
         try (socket;
-             BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-             PrintWriter writer = new PrintWriter(socket.getOutputStream(), true)) {
+                BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                PrintWriter writer = new PrintWriter(socket.getOutputStream(), true)) {
 
             // Authentication step (only if secretKey is configured)
             if (secretKey != null && !secretKey.isBlank()) {
@@ -125,12 +131,14 @@ public class GameEventTcpServer {
                         writer.println("AUTH_OK");
                         LoggerUtil.info("[{}] Client authenticated", serverName);
                     } else {
-                        LoggerUtil.warn("[{}] Authentication failed from {}", serverName, socket.getRemoteSocketAddress());
+                        LoggerUtil.warn("[{}] Authentication failed from {}", serverName,
+                                socket.getRemoteSocketAddress());
                         writer.println("AUTH_FAIL");
                         return;
                     }
                 } else {
-                    LoggerUtil.warn("[{}] No auth message from {}, closing", serverName, socket.getRemoteSocketAddress());
+                    LoggerUtil.warn("[{}] No auth message from {}, closing", serverName,
+                            socket.getRemoteSocketAddress());
                     return;
                 }
             }
@@ -138,7 +146,8 @@ public class GameEventTcpServer {
             activeWriter.set(writer);
             String line;
             while ((line = reader.readLine()) != null) {
-                if (line.isBlank()) continue;
+                if (line.isBlank())
+                    continue;
                 processor.processEvent(line);
             }
             LoggerUtil.info("[{}] Client disconnected", serverName);

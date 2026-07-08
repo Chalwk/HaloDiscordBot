@@ -39,7 +39,8 @@ public class Config {
                     String name = (String) map.get("name");
                     Object portObj = map.get("port");
                     int port = (portObj instanceof Number) ? ((Number) portObj).intValue() : 0;
-                    if (port <= 0 || name == null || name.isBlank()) continue;
+                    if (port <= 0 || name == null || name.isBlank())
+                        continue;
 
                     Object bindAddrObj = map.get("bind_address");
                     String bindAddress = (bindAddrObj instanceof String) ? (String) bindAddrObj : "127.0.0.1";
@@ -51,7 +52,8 @@ public class Config {
                     Object ipsObj = map.get("allowed_ips");
                     if (ipsObj instanceof List<?>) {
                         for (Object ip : (List<?>) ipsObj) {
-                            if (ip instanceof String) allowedIps.add((String) ip);
+                            if (ip instanceof String)
+                                allowedIps.add((String) ip);
                         }
                     }
 
@@ -66,7 +68,8 @@ public class Config {
                             }
                         }
                     }
-                    serverConfigs.put(name, new HaloServerConfig(name, port, bindAddress, secretKey, allowedIps, channels));
+                    serverConfigs.put(name,
+                            new HaloServerConfig(name, port, bindAddress, secretKey, allowedIps, channels));
                 }
             }
         }
@@ -75,10 +78,12 @@ public class Config {
     @SuppressWarnings("unchecked")
     private void loadEventEmbedConfigs() {
         Map<String, Object> gameEvents = (Map<String, Object>) data.get("GAME_EVENTS");
-        if (gameEvents == null) return;
+        if (gameEvents == null)
+            return;
 
         Map<String, Object> embeds = (Map<String, Object>) gameEvents.get("embeds");
-        if (embeds == null) return;
+        if (embeds == null)
+            return;
 
         for (Map.Entry<String, Object> entry : embeds.entrySet()) {
             String eventType = entry.getKey();
@@ -119,8 +124,7 @@ public class Config {
             }
 
             eventEmbedConfigs.put(eventType, new EventEmbedConfig(
-                    enabled, title, color, description, fields, typeDescriptions, channelKey, showServerName
-            ));
+                    enabled, title, color, description, fields, typeDescriptions, channelKey, showServerName));
         }
     }
 
@@ -135,7 +139,8 @@ public class Config {
     }
 
     private Color parseColor(String colorStr) {
-        if (colorStr == null) return null;
+        if (colorStr == null)
+            return null;
         try {
             Field field = Color.class.getField(colorStr.toUpperCase());
             return (Color) field.get(null);
@@ -155,7 +160,8 @@ public class Config {
     }
 
     public String getEventChannelId(String serverName, String channelKey) {
-        if (channelKey == null) return null;
+        if (channelKey == null)
+            return null;
         HaloServerConfig server = serverConfigs.get(serverName);
         if (server != null && server.perServerChannels().containsKey(channelKey)) {
             return server.perServerChannels().get(channelKey);
@@ -172,6 +178,6 @@ public class Config {
     }
 
     public record HaloServerConfig(String name, int port, String bindAddress, String secretKey,
-                                   List<String> allowedIps, Map<String, String> perServerChannels) {
+            List<String> allowedIps, Map<String, String> perServerChannels) {
     }
 }

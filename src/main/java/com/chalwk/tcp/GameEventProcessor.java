@@ -48,7 +48,8 @@ public class GameEventProcessor {
     }
 
     public void sendChatToGame(String discordUser, String message) {
-        if (message == null || message.trim().isEmpty()) return;
+        if (message == null || message.trim().isEmpty())
+            return;
         String trimmed = message.length() > 200 ? message.substring(0, 200) : message;
         String command = "say_all [Discord] " + discordUser + ": " + trimmed;
         tcpServer.sendCommand(command);
@@ -78,7 +79,8 @@ public class GameEventProcessor {
 
         return pending.future.whenComplete((res, ex) -> {
             pendingCommands.remove(reqId);
-            if (pending.timeoutTask != null) pending.timeoutTask.cancel(false);
+            if (pending.timeoutTask != null)
+                pending.timeoutTask.cancel(false);
         });
     }
 
@@ -89,7 +91,8 @@ public class GameEventProcessor {
 
         // format: eventType|key1=value1|key2=value2|...
         String[] parts = rawLine.split("\\|");
-        if (parts.length == 0) return;
+        if (parts.length == 0)
+            return;
 
         String eventType = parts[0];
         Map<String, String> data = new HashMap<>();
@@ -129,7 +132,8 @@ public class GameEventProcessor {
         }
 
         EmbedBuilder embed = buildEmbedFromConfig(eventType, data);
-        if (embed == null) return; // disabled or no config found
+        if (embed == null)
+            return; // disabled or no config found
 
         // figure out which Discord channel this event should go to
         EventEmbedConfig embedConfig = config.getEventEmbedConfig(eventType);
@@ -152,7 +156,8 @@ public class GameEventProcessor {
         channel.sendMessageEmbeds(embed.build()).queue();
     }
 
-    // takes the event type and data map, and builds an embed based on config.yml rules
+    // takes the event type and data map, and builds an embed based on config.yml
+    // rules
     private EmbedBuilder buildEmbedFromConfig(String eventType, Map<String, String> data) {
         EventEmbedConfig embedConfig = config.getEventEmbedConfig(eventType);
         if (embedConfig == null || !embedConfig.enabled()) {
@@ -178,7 +183,8 @@ public class GameEventProcessor {
             description = embedConfig.description();
         }
 
-        // either use explicit fields, or fall back to description, or just dump the raw data
+        // either use explicit fields, or fall back to description, or just dump the raw
+        // data
         if (embedConfig.fields() != null && !embedConfig.fields().isEmpty()) {
             for (EventEmbedConfig.FieldConfig field : embedConfig.fields()) {
                 String fieldName = replacePlaceholders(field.name(), data);
@@ -200,9 +206,11 @@ public class GameEventProcessor {
         return eb;
     }
 
-    // replaces {key} placeholders in a template string with values from the data map
+    // replaces {key} placeholders in a template string with values from the data
+    // map
     private String replacePlaceholders(String template, Map<String, String> data) {
-        if (template == null) return "";
+        if (template == null)
+            return "";
         Matcher m = PLACEHOLDER_PATTERN.matcher(template);
         StringBuilder sb = new StringBuilder();
         while (m.find()) {
@@ -214,9 +222,11 @@ public class GameEventProcessor {
         return sb.toString();
     }
 
-    // unescapes common sequences like \| \n \r that might come from sapp/phasor_discord.lua
+    // unescapes common sequences like \| \n \r that might come from
+    // sapp/phasor_discord.lua
     private String unescape(String s) {
-        if (s == null) return "";
+        if (s == null)
+            return "";
         return s.replace("\\|", "|")
                 .replace("\\n", "\n")
                 .replace("\\r", "\r");

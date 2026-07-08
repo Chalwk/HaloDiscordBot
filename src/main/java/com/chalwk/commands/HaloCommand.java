@@ -26,14 +26,16 @@ public class HaloCommand extends BaseCommand {
 
     @Override
     public CommandData getCommandData() {
-        OptionData commandOption = new OptionData(OptionType.STRING, "command", "Server command to execute (e.g., 'pl', 'map bloodgulch ctf')", true);
+        OptionData commandOption = new OptionData(OptionType.STRING, "command",
+                "Server command to execute (e.g., 'pl', 'map bloodgulch ctf')", true);
 
         if (processors.size() > 1) {
             OptionData serverOption = new OptionData(OptionType.STRING, "server", "Which Halo server to target", true);
             for (GameEventProcessor p : processors) {
                 serverOption.addChoice(p.getServerName(), p.getServerName());
             }
-            return Commands.slash("halo", "Execute a server command on the game server").addOptions(commandOption, serverOption);
+            return Commands.slash("halo", "Execute a server command on the game server").addOptions(commandOption,
+                    serverOption);
         } else {
             return Commands.slash("halo", "Execute a server command on the game server").addOptions(commandOption);
         }

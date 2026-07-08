@@ -47,8 +47,7 @@ public class Main {
                     serverConfig.port(),
                     serverConfig.bindAddress(),
                     serverConfig.secretKey(),
-                    serverConfig.allowedIps()
-            );
+                    serverConfig.allowedIps());
             server.start();
             allProcessors.add(server.getProcessor());
         }

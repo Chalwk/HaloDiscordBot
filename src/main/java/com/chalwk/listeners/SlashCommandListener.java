@@ -29,7 +29,8 @@ public class SlashCommandListener extends ListenerAdapter {
         if (requiredPerm != null) {
             Member member = event.getMember();
             if (member == null || !member.hasPermission(requiredPerm)) {
-                event.reply("You need the `" + requiredPerm.getName() + "` permission to use this command.").setEphemeral(true).queue();
+                event.reply("You need the `" + requiredPerm.getName() + "` permission to use this command.")
+                        .setEphemeral(true).queue();
                 return;
             }
         }
